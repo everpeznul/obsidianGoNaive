@@ -1,0 +1,9 @@
+*.tmp
+*.log
+
+node_modules/
+.idea/
+dist/
+
+.env
+config.local.json
