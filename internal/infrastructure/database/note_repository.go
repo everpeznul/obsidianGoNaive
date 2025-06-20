@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	"log"
 	"obsidianGoNaive/internal/domain"
 	"time"
@@ -23,7 +23,7 @@ type note struct {
 	Class      string
 	Tags       []string
 	Links      []string
-	Content    string
+	Content    []string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
@@ -31,24 +31,32 @@ type note struct {
 func someFunc() {
 	connStr := "user=postgres password=mypass dbname=productdb sslmode=disable"
 	db, err := sql.Open("postgres", connStr)
-
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	if err = db.Ping(); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func (db *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 	query := `INSERT INTO notes (title, path, class, tags, links, content, create_time, update_time) 
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
+	tempNote := nt.DomainToDatabase(note)
 	var pk uuid.UUID
-	err := db.QueryRow(query, note.Title, note.Path, note.Class,
-		note.Tags, note.Links, note.Content, note.CreateTime, note.UpdateTime).Scan(&pk)
+	err := db.QueryRow(query,
+		tempNote.Title,
+		tempNote.Path,
+		tempNote.Class,
+		pq.Array(tempNote.Tags),
+		pq.Array(tempNote.Links),
+		pq.Array(tempNote.Content),
+		tempNote.CreateTime,
+		tempNote.UpdateTime,
+	).Scan(&pk)
 
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to insert note: %w", err)
@@ -58,22 +66,30 @@ func (db *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 }
 
 func (db *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
-	query := `select * from notes where id = $1`
+	query := `SELECT * FROM notes WHERE id = $1`
 	row := db.QueryRow(query, id)
+
 	note := note{}
-	err := row.Scan(&note.Id, &note.Title, &note.Path, &note.Class,
-		&note.Tags, &note.Links, &note.Content, &note.CreateTime, &note.UpdateTime)
+	err := row.Scan(
+		&note.Id,
+		&note.Title,
+		&note.Path,
+		&note.Class,
+		pq.Array(&note.Tags),
+		pq.Array(&note.Links),
+		pq.Array(&note.Content),
+		&note.CreateTime,
+		&note.UpdateTime,
+	)
 
 	if err != nil {
-
 		return domain.Note{}, fmt.Errorf("failed: %w", err)
 	}
 
-	return nt.DatabaseToDomain(note), err
+	return nt.DatabaseToDomain(note), nil
 }
 
 func (db *PgDB) GetAll() ([]domain.Note, error) {
-
 	var notes []domain.Note
 	query := `SELECT * FROM notes`
 
@@ -81,11 +97,21 @@ func (db *PgDB) GetAll() ([]domain.Note, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var n note
-		err := rows.Scan(&n.Id, &n.Title, &n.Path, &n.Class,
-			&n.Tags, &n.Links, &n.Content, &n.CreateTime, &n.UpdateTime)
+		err := rows.Scan(
+			&n.Id,
+			&n.Title,
+			&n.Path,
+			&n.Class,
+			pq.Array(&n.Tags),
+			pq.Array(&n.Links),
+			pq.Array(&n.Content),
+			&n.CreateTime,
+			&n.UpdateTime,
+		)
 		if err != nil {
 			return nil, fmt.Errorf("failed: %w", err)
 		}
@@ -96,33 +122,40 @@ func (db *PgDB) GetAll() ([]domain.Note, error) {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
 
-	return notes, err
-
+	return notes, nil
 }
 
 func (db *PgDB) UpdateById(n domain.Note) error {
 	nTemp := nt.DomainToDatabase(n)
 	query := `UPDATE notes 
-SET title = $1,
-    path = $2,
-    class = $3,
-    tags = $4,
-    links = $5,
-    content = $6,
-    create_time = $7,
-    update_time = $8
-WHERE id = $9;`
-	_, err := db.Exec(query, nTemp.Title, nTemp.Path, nTemp.Class,
-		nTemp.Tags, nTemp.Links, nTemp.Content, nTemp.CreateTime, nTemp.UpdateTime)
+              SET title = $1,
+                  path = $2,
+                  class = $3,
+                  tags = $4,
+                  links = $5,
+                  content = $6,
+                  create_time = $7,
+                  update_time = $8
+              WHERE id = $9`
+
+	_, err := db.Exec(query,
+		nTemp.Title,
+		nTemp.Path,
+		nTemp.Class,
+		pq.Array(nTemp.Tags),
+		pq.Array(nTemp.Links),
+		pq.Array(nTemp.Content),
+		nTemp.CreateTime,
+		nTemp.UpdateTime,
+		nTemp.Id,
+	)
 
 	return err
 }
 
 func (db *PgDB) DeleteByID(id uuid.UUID) error {
-
-	query := `delete from notes where id = $1`
+	query := `DELETE FROM notes WHERE id = $1`
 	_, err := db.Exec(query, id)
-
 	return err
 }
 
@@ -133,15 +166,22 @@ func (db *PgDB) GetByTitle(title string) (domain.Note, error) {
               WHERE title = $1`
 
 	err := db.QueryRow(query, title).Scan(
-		&note.Id, &note.Title, &note.Path, &note.Class,
-		&note.Tags, &note.Links, &note.Content, &note.CreateTime, &note.UpdateTime,
+		&note.Id,
+		&note.Title,
+		&note.Path,
+		&note.Class,
+		pq.Array(&note.Tags),
+		pq.Array(&note.Links),
+		pq.Array(&note.Content),
+		&note.CreateTime,
+		&note.UpdateTime,
 	)
 
 	if err != nil {
 		return domain.Note{}, fmt.Errorf("failed: %w", err)
 	}
 
-	return nt.DatabaseToDomain(note), err
+	return nt.DatabaseToDomain(note), nil
 }
 
 func (db *PgDB) GetByAncestor(ancestor string) ([]domain.Note, error) {
@@ -154,12 +194,20 @@ func (db *PgDB) GetByAncestor(ancestor string) ([]domain.Note, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var note note
 		err := rows.Scan(
-			&note.Id, &note.Title, &note.Path, &note.Class,
-			&note.Tags, &note.Links, &note.Content, &note.CreateTime, &note.UpdateTime,
+			&note.Id,
+			&note.Title,
+			&note.Path,
+			&note.Class,
+			pq.Array(&note.Tags),
+			pq.Array(&note.Links),
+			pq.Array(&note.Content),
+			&note.CreateTime,
+			&note.UpdateTime,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed: %w", err)
@@ -171,5 +219,5 @@ func (db *PgDB) GetByAncestor(ancestor string) ([]domain.Note, error) {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
 
-	return notes, err
+	return notes, nil
 }

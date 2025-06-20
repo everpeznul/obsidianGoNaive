@@ -12,7 +12,7 @@ func (nt *noteTranslater) DatabaseToDomain(n note) domain.Note {
 		n.Class,
 		n.Tags,
 		n.Links,
-		n.Content,
+		n.Content[0],
 		n.CreateTime,
 		n.UpdateTime,
 	}
@@ -26,7 +26,7 @@ func (nt *noteTranslater) DomainToDatabase(n domain.Note) note {
 		n.Class,
 		n.Tags,
 		n.Links,
-		n.Content,
+		[]string{n.Content},
 		n.CreateTime,
 		n.UpdateTime,
 	}
