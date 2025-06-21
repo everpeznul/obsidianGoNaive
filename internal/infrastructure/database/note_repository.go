@@ -13,7 +13,7 @@ import (
 var nt = noteTranslater{}
 
 type PgDB struct {
-	sql.DB
+	DB *sql.DB
 }
 
 type note struct {
@@ -41,13 +41,18 @@ func someFunc() {
 	}
 }
 
-func (db *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
-	query := `INSERT INTO notes (title, path, class, tags, links, content, create_time, update_time) 
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
+	// Генерируем UUID в коде
+	newID := uuid.New()
+
+	query := `INSERT INTO notes (id, title, path, class, tags, links, content, create_time, update_time) 
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
 
 	tempNote := nt.DomainToDatabase(note)
-	var pk uuid.UUID
-	err := db.QueryRow(query,
+	tempNote.Id = newID // Устанавливаем сгенерированный ID
+
+	_, err := p.DB.Exec(query,
+		tempNote.Id,
 		tempNote.Title,
 		tempNote.Path,
 		tempNote.Class,
@@ -56,18 +61,18 @@ func (db *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 		pq.Array(tempNote.Content),
 		tempNote.CreateTime,
 		tempNote.UpdateTime,
-	).Scan(&pk)
+	)
 
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to insert note: %w", err)
 	}
 
-	return pk, nil
+	return newID, nil
 }
 
-func (db *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
+func (p *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
 	query := `SELECT * FROM notes WHERE id = $1`
-	row := db.QueryRow(query, id)
+	row := p.DB.QueryRow(query, id)
 
 	note := note{}
 	err := row.Scan(
@@ -89,11 +94,11 @@ func (db *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
 	return nt.DatabaseToDomain(note), nil
 }
 
-func (db *PgDB) GetAll() ([]domain.Note, error) {
+func (p *PgDB) GetAll() ([]domain.Note, error) {
 	var notes []domain.Note
 	query := `SELECT * FROM notes`
 
-	rows, err := db.Query(query)
+	rows, err := p.DB.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
@@ -125,7 +130,7 @@ func (db *PgDB) GetAll() ([]domain.Note, error) {
 	return notes, nil
 }
 
-func (db *PgDB) UpdateById(n domain.Note) error {
+func (p *PgDB) UpdateById(n domain.Note) error {
 	nTemp := nt.DomainToDatabase(n)
 	query := `UPDATE notes 
               SET title = $1,
@@ -138,7 +143,7 @@ func (db *PgDB) UpdateById(n domain.Note) error {
                   update_time = $8
               WHERE id = $9`
 
-	_, err := db.Exec(query,
+	_, err := p.DB.Exec(query,
 		nTemp.Title,
 		nTemp.Path,
 		nTemp.Class,
@@ -153,19 +158,19 @@ func (db *PgDB) UpdateById(n domain.Note) error {
 	return err
 }
 
-func (db *PgDB) DeleteByID(id uuid.UUID) error {
+func (p *PgDB) DeleteByID(id uuid.UUID) error {
 	query := `DELETE FROM notes WHERE id = $1`
-	_, err := db.Exec(query, id)
+	_, err := p.DB.Exec(query, id)
 	return err
 }
 
-func (db *PgDB) GetByTitle(title string) (domain.Note, error) {
+func (p *PgDB) FindByTitle(title string) (domain.Note, error) {
 	var note note
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time 
               FROM notes 
               WHERE title = $1`
 
-	err := db.QueryRow(query, title).Scan(
+	err := p.DB.QueryRow(query, title).Scan(
 		&note.Id,
 		&note.Title,
 		&note.Path,
@@ -184,13 +189,13 @@ func (db *PgDB) GetByTitle(title string) (domain.Note, error) {
 	return nt.DatabaseToDomain(note), nil
 }
 
-func (db *PgDB) GetByAncestor(ancestor string) ([]domain.Note, error) {
+func (p *PgDB) FindByAncestor(ancestor string) ([]domain.Note, error) {
 	var notes []domain.Note
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time  
               FROM notes 
               WHERE title ILIKE $1`
 
-	rows, err := db.Query(query, ancestor+"%")
+	rows, err := p.DB.Query(query, ancestor+"%")
 	if err != nil {
 		return nil, fmt.Errorf("failed: %w", err)
 	}
