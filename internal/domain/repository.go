@@ -11,3 +11,10 @@ type NoteRepository interface {
 	FindByTitle(title string) (Note, error)
 	FindByAncestor(title string) ([]Note, error)
 }
+
+var Repo NoteRepository
+
+func InitRepo(r NoteRepository) {
+
+	Repo = r
+}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"log"
 	"obsidianGoNaive/internal/domain"
 	"time"
 )
@@ -26,19 +25,6 @@ type note struct {
 	Content    []string
 	CreateTime time.Time
 	UpdateTime time.Time
-}
-
-func someFunc() {
-	connStr := "user=postgres password=mypass dbname=productdb sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	if err = db.Ping(); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
