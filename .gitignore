@@ -4,6 +4,7 @@
 node_modules/
 .idea/
 dist/
+/db
 
 .env
 config.local.json
@@ -16,6 +17,8 @@ config.local.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+.gptree_config
+gptree_output.txt
 
 # Go-специфичные файлы
 *.exe

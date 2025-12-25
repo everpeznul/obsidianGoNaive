@@ -1,15 +1,28 @@
 package http
 
 import (
+	"database/sql"
 	"encoding/json"
-	"github.com/google/uuid"
+	"errors"
 	"net/http"
 	"obsidianGoNaive/internal/domain"
+	"obsidianGoNaive/internal/use_case"
+	"strings"
+
+	"github.com/google/uuid"
 )
 
 var nt = noteTranslater{}
 
+// /
+// домашняя страница
+func HomeHandler(w http.ResponseWriter, r *http.Request) {
+
+	w.Write([]byte("Home page"))
+}
+
 // /notes/{id}
+// получение заметки по айди
 func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
@@ -21,7 +34,16 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 		note, err := domain.Repo.GetByID(uuid)
 
 		if err != nil {
-			http.Error(w, "Note wasn't found", http.StatusNotFound)
+			if errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), "not found") {
+				http.Error(w, "Note wasn't found", http.StatusNotFound)
+
+				return
+			} else {
+				http.Error(w, "Internal error", http.StatusInternalServerError)
+
+				return
+			}
+
 		} else {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
@@ -38,10 +60,12 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = domain.Repo.UpdateById(nt.HTTPToDomain(n))
+		err = use_case.Updtr.Update(nt.HTTPToDomain(n))
 
 		if err != nil {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+			return
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
@@ -51,10 +75,14 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err != nil {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+			return
 		}
 
 	default:
 		http.Error(w, "Invalid JSON", http.StatusMethodNotAllowed)
+
+		return
 	}
 
 }
@@ -63,6 +91,7 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 func NotesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
+	// поиск по имени или предку
 	case "GET":
 		params := r.URL.Query()
 
@@ -73,6 +102,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 				if err != nil {
 					http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+					return
 				} else {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
@@ -84,6 +115,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 				notes, err := domain.Repo.FindByAncestor(params.Get("ancestor"))
 				if err != nil {
 					http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+					return
 				} else {
 					w.Header().Set("Content-Type", "application/json")
 					w.WriteHeader(http.StatusOK)
@@ -92,11 +125,15 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		} else if len(params) == 2 {
 			http.Error(w, "Two invalid parameters", http.StatusBadRequest)
+
+			return
 		} else {
 
 			notes, err := domain.Repo.GetAll()
 			if err != nil {
 				http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+				return
 			} else {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
@@ -104,6 +141,7 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+	// создание новой заметки
 	case "POST":
 		var n note
 
@@ -117,10 +155,14 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		domain.Repo.Insert(nt.HTTPToDomain(n))
 		if err != nil {
 			http.Error(w, "Internal Error", http.StatusInternalServerError)
+
+			return
 		} else {
 			w.WriteHeader(http.StatusOK)
 		}
 	default:
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+
+		return
 	}
 }

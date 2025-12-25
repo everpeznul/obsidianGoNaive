@@ -73,10 +73,12 @@ func (p *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
 		&note.UpdateTime,
 	)
 
-	if err != nil {
-		return domain.Note{}, fmt.Errorf("failed: %w", err)
+	if err == sql.ErrNoRows {
+		return domain.Note{}, fmt.Errorf("not found: %w", err)
 	}
-
+	if err != nil {
+		return domain.Note{}, fmt.Errorf("db error: %w", err)
+	}
 	return nt.DatabaseToDomain(note), nil
 }
 
