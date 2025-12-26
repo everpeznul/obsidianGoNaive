@@ -17,11 +17,10 @@ import (
 func main() {
 	// Создание подключения к базе данных
 	db, err := createDatabaseConnection()
-	defer db.Close()
-
 	if err != nil {
 		log.Fatal("Ошибка создания подключения:", err)
 	}
+	defer db.Close()
 
 	// Создание репозитория через композицию
 	noteRepo := &database.PgDB{DB: db}
