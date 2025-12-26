@@ -8,8 +8,8 @@ type NoteRepository interface {
 	GetAll() ([]Note, error)
 	UpdateById(note Note) error
 	DeleteById(id uuid.UUID) error
-	FindByTitle(title string) (Note, error)
-	FindByAncestor(title string) ([]Note, error)
+	FindByName(name string) (Note, error)
+	FindByAncestor(ancestor string) ([]Note, error)
 }
 
 var Repo NoteRepository

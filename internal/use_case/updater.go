@@ -1,10 +1,13 @@
 package use_case
 
-import "obsidianGoNaive/internal/domain"
+import (
+	"obsidianGoNaive/internal/domain"
+	"obsidianGoNaive/internal/infrastructure/database"
+)
 
 var Updtr Updater
 
-func InitUpdater(repo domain.NoteRepository) {
+func InitUpdater(repo *database.PgDB) {
 
 	Updtr = Updater{repo, Linker{}, Tager{}}
 }
