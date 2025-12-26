@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Notes viewer</title>
+    <style>
+        body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+        .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        input, select, button { padding: 8px 10px; font-size: 14px; }
+        #content {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+            white-space: pre-wrap;   /* сохраняет переносы строк */
+            word-break: break-word;
+            min-height: 200px;
+        }
+        #meta { margin-top: 12px; color: #555; }
+        #error { margin-top: 12px; color: #b00020; }
+    </style>
+</head>
+<body>
+<h1>Заметка</h1>
+
+<div class="row">
+    <select id="mode">
+        <option value="title">По title</option>
+        <option value="id">По id</option>
+    </select>
+
+    <input id="q" size="40" placeholder="например: мысль.что-то или UUID" />
+    <button id="load">Загрузить</button>
+</div>
+
+<div id="meta"></div>
+<div id="error"></div>
+<pre id="content"></pre>
+
+<script>
+    const modeEl = document.getElementById('mode');
+    const qEl = document.getElementById('q');
+    const metaEl = document.getElementById('meta');
+    const errEl = document.getElementById('error');
+    const contentEl = document.getElementById('content');
+    const btn = document.getElementById('load');
+
+    function setError(msg) {
+        errEl.textContent = msg || '';
+    }
+
+    function setMeta(note) {
+        const title = note?.title ? `title: ${note.title}` : '';
+        const id = note?.id ? `id: ${note.id}` : '';
+        metaEl.textContent = [title, id].filter(Boolean).join(' | ');
+    }
+
+    async function loadNote() {
+        setError('');
+        metaEl.textContent = '';
+        contentEl.textContent = '';
+
+        const mode = modeEl.value;
+        const q = qEl.value.trim();
+
+        if (!q) {
+            setError('Пустой запрос');
+            return;
+        }
+
+        const url = mode === 'id'
+            ? `/notes/${encodeURIComponent(q)}`
+            : `/notes?title=${encodeURIComponent(q)}`;
+
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) {
+                const text = await resp.text().catch(() => '');
+                throw new Error(`${resp.status} ${resp.statusText}${text ? ` — ${text}` : ''}`);
+            }
+
+            const note = await resp.json();
+            setMeta(note);
+            contentEl.textContent = note?.content ?? '';
+        } catch (e) {
+            setError(String(e.message || e));
+        }
+    }
+
+    btn.addEventListener('click', loadNote);
+    qEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') loadNote();
+    });
+</script>
+</body>
+</html>
