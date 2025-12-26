@@ -17,26 +17,30 @@ import (
 func main() {
 	// Создание подключения к базе данных
 	db, err := createDatabaseConnection()
+	defer db.Close()
+
 	if err != nil {
 		log.Fatal("Ошибка создания подключения:", err)
 	}
-	defer db.Close()
 
 	// Создание репозитория через композицию
 	noteRepo := &database.PgDB{DB: db}
 	domain.InitRepo(noteRepo)
 	use_case.InitUpdater(noteRepo)
 
-	http.HandleFunc("/", obsiHttp.HomeHandler)
+	//http.HandleFunc("/", obsiHttp.HomeHandler)
 	http.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
 	http.HandleFunc("/notes", obsiHttp.NotesHandler)
+
+	fs := http.FileServer(http.Dir("./web"))
+	http.Handle("/", fs)
 
 	http.ListenAndServe(":8080", nil)
 }
 
 func createDatabaseConnection() (*sql.DB, error) {
 
-	connStr := "user=postgres password=mypass dbname=postgres sslmode=disable"
+	connStr := "host=localhost port=5432 user=postgres password=mypass dbname=postgres sslmode=disable"
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {

@@ -1,40 +1,54 @@
 package database
 
-import "obsidianGoNaive/internal/domain"
+import (
+	"obsidianGoNaive/internal/domain"
+	"time"
 
-type noteTranslater struct{}
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+)
 
-// internal/infrastructure/database/note_translater.go
-func (nt noteTranslater) DatabaseToDomain(n note) domain.Note {
-	// Проверяем, что Content не пустой, иначе создаем массив с пустой строкой
-	var content string
-	if len(n.Content) > 0 {
-		content = n.Content[0]
-	}
-	// content автоматически будет пустой строкой, если массив пустой
+type dbNote struct {
+	Id         uuid.UUID
+	Title      string
+	Path       string
+	Class      string
+	Tags       pq.StringArray
+	Links      pq.StringArray
+	Content    pq.StringArray
+	CreateTime time.Time
+	UpdateTime time.Time
+}
+
+var nt noteTranslate
+
+type noteTranslate struct{}
+
+func (nt *noteTranslate) DatabaseToDomain(n dbNote) domain.Note {
 
 	return domain.Note{
 		Id:         n.Id,
 		Title:      n.Title,
 		Path:       n.Path,
 		Class:      n.Class,
-		Tags:       n.Tags,
-		Links:      n.Links,
-		Content:    content, // Используем безопасную версию
+		Tags:       []string(n.Tags),
+		Links:      []string(n.Links),
+		Content:    n.Content[0],
 		CreateTime: n.CreateTime,
 		UpdateTime: n.UpdateTime,
 	}
 }
 
-func (nt *noteTranslater) DomainToDatabase(n domain.Note) note {
+func (nt *noteTranslate) DomainToDatabase(n domain.Note) dbNote {
 
-	return note{n.Id,
+	return dbNote{
+		n.Id,
 		n.Title,
 		n.Path,
 		n.Class,
-		n.Tags,
-		n.Links,
-		[]string{n.Content},
+		pq.StringArray(n.Tags),
+		pq.StringArray(n.Links),
+		pq.StringArray{n.Content},
 		n.CreateTime,
 		n.UpdateTime,
 	}
