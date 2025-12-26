@@ -27,14 +27,16 @@ func main() {
 	domain.InitRepo(noteRepo)
 	use_case.InitUpdater(noteRepo)
 
+	mux := http.NewServeMux()
+
 	//http.HandleFunc("/", obsiHttp.HomeHandler)
-	http.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
-	http.HandleFunc("/notes", obsiHttp.NotesHandler)
-
 	fs := http.FileServer(http.Dir("./web"))
-	http.Handle("/", fs)
+	mux.Handle("/", fs)
+	mux.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
+	mux.HandleFunc("/notes", obsiHttp.NotesHandler)
 
-	http.ListenAndServe(":8080", nil)
+	handler := obsiHttp.JsonMiddleware(mux)
+	http.ListenAndServe(":8080", handler)
 }
 
 func createDatabaseConnection() (*sql.DB, error) {

@@ -18,7 +18,7 @@ func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 	newId := uuid.New()
 
 	newNote := dbNote{}
-	newNote = nt.DomainToDatabase(note)
+	newNote = nm.DomainToDatabase(note)
 	newNote.Id = newId
 
 	query := `INSERT INTO notes (id, title, path, class, tags, links, content, create_time, update_time) 
@@ -66,7 +66,8 @@ func (p *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
 	if err != nil {
 		return domain.Note{}, fmt.Errorf("database error: %w", err)
 	}
-	return nt.DatabaseToDomain(note), nil
+
+	return nm.DatabaseToDomain(note), nil
 }
 
 func (p *PgDB) GetAll() ([]domain.Note, error) {
@@ -98,7 +99,7 @@ func (p *PgDB) GetAll() ([]domain.Note, error) {
 			return nil, fmt.Errorf("failed push another note to notes list from database: %w", err)
 		}
 
-		notes = append(notes, nt.DatabaseToDomain(n))
+		notes = append(notes, nm.DatabaseToDomain(n))
 	}
 
 	if err = rows.Err(); err != nil {
@@ -109,7 +110,7 @@ func (p *PgDB) GetAll() ([]domain.Note, error) {
 }
 
 func (p *PgDB) UpdateById(n domain.Note) error {
-	newNote := nt.DomainToDatabase(n)
+	newNote := nm.DomainToDatabase(n)
 	query := `UPDATE notes 
               SET title = $1,
                   path = $2,
@@ -158,7 +159,7 @@ func (p *PgDB) FindByName(name string) (domain.Note, error) {
               FROM notes 
               WHERE right(path, strpos(reverse(path), '/') - 1) = $1`
 
-	err := p.DB.QueryRow(query, name).Scan(
+	err := p.DB.QueryRow(query, name+".md").Scan(
 		&newNote.Id,
 		&newNote.Title,
 		&newNote.Path,
@@ -174,7 +175,8 @@ func (p *PgDB) FindByName(name string) (domain.Note, error) {
 		return domain.Note{}, fmt.Errorf("failed to get note '%s' from database: %w", name, err)
 	}
 
-	return nt.DatabaseToDomain(newNote), nil
+	fmt.Print(newNote)
+	return nm.DatabaseToDomain(newNote), nil
 }
 
 // func (p *PgDB) FindAncestors(name string) (domain.Note, error) {}
@@ -209,7 +211,7 @@ func (p *PgDB) FindByAncestor(ancestor string) ([]domain.Note, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to push note to notes from database in finding descendents of %s: %w", ancestor, err)
 		}
-		notes = append(notes, nt.DatabaseToDomain(note))
+		notes = append(notes, nm.DatabaseToDomain(note))
 	}
 
 	if err = rows.Err(); err != nil {

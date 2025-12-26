@@ -60,7 +60,7 @@ func ReturnTypesNote(n Note) Noter {
 }
 
 func Exists(title string) bool {
-	_, err := Repo.FindByTitle(title)
+	_, err := Repo.FindByName(title)
 
 	if err != nil {
 		//если заметка не существует, то создать заметку и обновить её содержимое

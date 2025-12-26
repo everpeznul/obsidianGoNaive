@@ -4,30 +4,186 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Notes viewer</title>
+
+    <!-- Marked.js для парсинга Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Highlight.js для подсветки кода -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
     <style>
-        body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
-        .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-        input, select, button { padding: 8px 10px; font-size: 14px; }
+        body {
+            font-family: system-ui, -apple-system, Arial, sans-serif;
+            margin: 24px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        input, select, button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #0052a3;
+        }
         #content {
             margin-top: 16px;
-            padding: 12px;
-            border: 1px solid #ddd;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            background: #fafafa;
-            white-space: pre-wrap;   /* сохраняет переносы строк */
-            word-break: break-word;
+            background: #ffffff;
             min-height: 200px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            line-height: 1.6;
         }
-        #meta { margin-top: 12px; color: #555; }
-        #error { margin-top: 12px; color: #b00020; }
+        #meta {
+            margin-top: 12px;
+            color: #666;
+            font-size: 13px;
+        }
+        #error {
+            margin-top: 12px;
+            color: #d32f2f;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 4px;
+            display: none;
+        }
+        #error:not(:empty) {
+            display: block;
+        }
+
+        /* Стили для Markdown */
+        #content h1 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-top: 24px;
+        }
+        #content h2 {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 6px;
+            margin-top: 20px;
+        }
+        #content h3 {
+            margin-top: 16px;
+        }
+        #content a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        #content a:hover {
+            text-decoration: underline;
+        }
+        #content code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        #content pre {
+            background: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid #e1e4e8;
+        }
+        #content pre code {
+            background: transparent;
+            padding: 0;
+        }
+        #content blockquote {
+            margin-left: 0;
+            padding-left: 16px;
+            border-left: 4px solid #ddd;
+            color: #666;
+        }
+        #content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+        }
+        #content table th,
+        #content table td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        #content table th {
+            background: #f5f5f5;
+            font-weight: 600;
+        }
+        #content ul, #content ol {
+            padding-left: 24px;
+        }
+        #content li {
+            margin: 4px 0;
+        }
+        #content img {
+            max-width: 100%;
+            height: auto;
+        }
+        #content hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 24px 0;
+        }
+        #content p {
+            margin: 12px 0;
+        }
+
+        .toggle-container {
+            margin-top: 12px;
+        }
+        .toggle-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .toggle-label input {
+            cursor: pointer;
+        }
+
+        .debug-info {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+            color: #333;
+            display: none;
+            white-space: pre-wrap;
+        }
+        .debug-info.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
-<h1>Заметка</h1>
+<h1>📝 Заметка</h1>
 
 <div class="row">
     <select id="mode">
-        <option value="title">По title</option>
+        <option value="name">По name</option>
         <option value="id">По id</option>
     </select>
 
@@ -35,9 +191,21 @@
     <button id="load">Загрузить</button>
 </div>
 
+<div class="toggle-container">
+    <label class="toggle-label">
+        <input type="checkbox" id="renderMarkdown" checked />
+        <span>Рендерить Markdown</span>
+    </label>
+    <label class="toggle-label" style="margin-left: 16px;">
+        <input type="checkbox" id="showDebug" />
+        <span>Показать отладку</span>
+    </label>
+</div>
+
 <div id="meta"></div>
 <div id="error"></div>
-<pre id="content"></pre>
+<div class="debug-info" id="debugInfo"></div>
+<div id="content"></div>
 
 <script>
     const modeEl = document.getElementById('mode');
@@ -46,21 +214,94 @@
     const errEl = document.getElementById('error');
     const contentEl = document.getElementById('content');
     const btn = document.getElementById('load');
+    const renderMarkdownEl = document.getElementById('renderMarkdown');
+    const showDebugEl = document.getElementById('showDebug');
+    const debugInfoEl = document.getElementById('debugInfo');
+
+    let currentNote = null;
+
+    // Настройка marked.js
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        highlight: function(code, lang) {
+            if (lang && hljs.getLanguage(lang)) {
+                try {
+                    return hljs.highlight(code, { language: lang }).value;
+                } catch (err) {}
+            }
+            return hljs.highlightAuto(code).value;
+        }
+    });
 
     function setError(msg) {
         errEl.textContent = msg || '';
     }
 
     function setMeta(note) {
-        const title = note?.title ? `title: ${note.title}` : '';
+        const name = note?.name ? `name: ${note.name}` : '';
         const id = note?.id ? `id: ${note.id}` : '';
-        metaEl.textContent = [title, id].filter(Boolean).join(' | ');
+        metaEl.textContent = [name, id].filter(Boolean).join(' | ');
+    }
+
+    function updateDebugInfo(content) {
+        if (!content) {
+            debugInfoEl.textContent = 'Нет контента для отладки';
+            return;
+        }
+
+        const lines = content.split('\n');
+        const info = [
+            `Длина: ${content.length} символов`,
+            `Строк: ${lines.length}`,
+            `Первые 200 символов:\n${content.substring(0, 200)}`,
+            `\nПоследние 100 символов:\n${content.substring(Math.max(0, content.length - 100))}`
+        ];
+
+        debugInfoEl.textContent = info.join('\n');
+    }
+
+    function displayContent(content) {
+        if (!content) {
+            contentEl.innerHTML = '<em style="color: #999;">Нет содержимого</em>';
+            updateDebugInfo('');
+            return;
+        }
+
+        // Обновляем отладочную информацию
+        updateDebugInfo(content);
+
+        if (renderMarkdownEl.checked) {
+            // Рендерим Markdown
+            try {
+                contentEl.innerHTML = marked.parse(content);
+                // Применяем подсветку синтаксиса ко всем блокам кода
+                contentEl.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+            } catch (e) {
+                console.error('Ошибка парсинга Markdown:', e);
+                // Fallback на обычный текст при ошибке
+                contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">${escapeHtml(content)}</pre>`;
+            }
+        } else {
+            // Показываем как обычный текст с сохранением переносов
+            contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">${escapeHtml(content)}</pre>`;
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     async function loadNote() {
         setError('');
         metaEl.textContent = '';
-        contentEl.textContent = '';
+        contentEl.innerHTML = '';
+        debugInfoEl.textContent = '';
+        currentNote = null;
 
         const mode = modeEl.value;
         const q = qEl.value.trim();
@@ -72,7 +313,7 @@
 
         const url = mode === 'id'
             ? `/notes/${encodeURIComponent(q)}`
-            : `/notes?title=${encodeURIComponent(q)}`;
+            : `/notes?name=${encodeURIComponent(q)}`;
 
         try {
             const resp = await fetch(url);
@@ -82,16 +323,39 @@
             }
 
             const note = await resp.json();
+            currentNote = note;
+
+            console.log('Полученная заметка:', note);
+            console.log('Контент:', note?.content);
+            console.log('Длина контента:', note?.content?.length);
+
             setMeta(note);
-            contentEl.textContent = note?.content ?? '';
+            displayContent(note?.content ?? '');
         } catch (e) {
             setError(String(e.message || e));
+            console.error('Ошибка загрузки:', e);
         }
     }
 
     btn.addEventListener('click', loadNote);
     qEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') loadNote();
+    });
+
+    // Переключение режима отображения
+    renderMarkdownEl.addEventListener('change', () => {
+        if (currentNote && currentNote.content) {
+            displayContent(currentNote.content);
+        }
+    });
+
+    // Переключение отладочной информации
+    showDebugEl.addEventListener('change', () => {
+        if (showDebugEl.checked) {
+            debugInfoEl.classList.add('show');
+        } else {
+            debugInfoEl.classList.remove('show');
+        }
     });
 </script>
 </body>
