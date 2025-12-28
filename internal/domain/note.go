@@ -29,12 +29,18 @@ func (n *Note) FindFounder() string {
 	return founder
 }
 func (n *Note) FindAncestor() string {
+
 	a := strings.Split(n.Title, ".")
-	var ancestor string
+	ancestor := ""
+
+	if len(a) == 1 {
+		return a[0]
+	}
 	for i := len(a) - 2; i >= 0; i-- {
 
 		if !strings.Contains(a[i], "%") {
-			ancestor = strings.Join(a, ".")
+			ancestor = strings.Join(a[:i+1], ".")
+			break
 		}
 	}
 
@@ -46,6 +52,9 @@ func (n *Note) FindAncestor() string {
 func (n *Note) FindFather() string {
 
 	f := strings.Split(n.Title, ".")
+	if len(f) == 1 {
+		return f[0]
+	}
 	father := strings.Join(f[:len(f)-1], ".")
 	if Exists(father) {
 
