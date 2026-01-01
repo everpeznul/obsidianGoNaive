@@ -19,22 +19,22 @@ type Note struct {
 	UpdateTime time.Time
 }
 
-func (n *Note) FindFounder() string {
+func (n *Note) FindFounder() (string, error) {
 
 	founder := strings.Split(n.Title, ".")[0]
 	if Exists(founder) {
 
 	}
 
-	return founder
+	return founder, nil
 }
-func (n *Note) FindAncestor() string {
+func (n *Note) FindAncestor() (string, error) {
 
 	a := strings.Split(n.Title, ".")
 	ancestor := ""
 
 	if len(a) == 1 {
-		return a[0]
+		return a[0], nil
 	}
 	for i := len(a) - 2; i >= 0; i-- {
 
@@ -46,18 +46,18 @@ func (n *Note) FindAncestor() string {
 
 	if Exists(ancestor) {
 	}
-	return ancestor
+	return ancestor, nil
 
 }
-func (n *Note) FindFather() string {
+func (n *Note) FindFather() (string, error) {
 
 	f := strings.Split(n.Title, ".")
 	if len(f) == 1 {
-		return f[0]
+		return f[0], nil
 	}
 	father := strings.Join(f[:len(f)-1], ".")
 	if Exists(father) {
 
 	}
-	return father
+	return father, nil
 }

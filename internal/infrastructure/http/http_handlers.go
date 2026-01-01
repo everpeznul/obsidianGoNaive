@@ -1,9 +1,7 @@
 package http
 
 import (
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/use_case"
@@ -20,6 +18,8 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 // /notes/{id}
 func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
 	tempId := r.PathValue("id")
 	id, err := uuid.Parse(tempId)
 
@@ -31,25 +31,16 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	case "GET":
-		note, err := domain.Repo.GetByID(id)
+		note, err := domain.Repo.GetByID(ctx, id)
 
-		if err != nil {
-
-			if errors.Is(err, sql.ErrNoRows) {
-				http.Error(w, "Note wasn't found", http.StatusNotFound)
-
-				return
-			}
-
-			http.Error(w, "Internal error", http.StatusInternalServerError)
-
+		if writeError(w, err) {
 			return
-
 		}
 
 		data, err := json.Marshal(nm.DomainToHTTP(note))
 		if err != nil {
-			http.Error(w, "encode error", http.StatusInternalServerError)
+
+			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -62,26 +53,30 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 		// Парсим JSON из request body в структуру
 		err := json.NewDecoder(r.Body).Decode(&note)
 		if err != nil {
+
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
 
-		err = use_case.Updtr.Update(nm.HTTPToDomain(note))
+		domainNote := nm.HTTPToDomain(note)
+		if id != domainNote.Id {
+			http.Error(w, "Note id != id", http.StatusBadRequest)
+			return
+		}
+		domainNote.Id = id
 
-		if err != nil {
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
+		err = use_case.Updtr.Update(ctx, domainNote)
 
+		if writeError(w, err) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		return
 
 	case "DELETE":
-		err := domain.Repo.DeleteById(id)
+		err := domain.Repo.DeleteById(ctx, id)
 
-		if err != nil {
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-
+		if writeError(w, err) {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
@@ -97,6 +92,9 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 // /notes&title=key&ancestor=key
 func NotesHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
 	switch r.Method {
 
 	// поиск по имени или предку
@@ -104,16 +102,15 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		params := r.URL.Query()
 
 		if len(params) == 0 {
-			notes, err := domain.Repo.GetAll()
-			if err != nil {
-				http.Error(w, "Internal Error", http.StatusInternalServerError)
-
+			notes, err := domain.Repo.GetAll(ctx)
+			if writeError(w, err) {
 				return
 			}
 
 			data, err := json.Marshal(nm.DomainToHTTPSlice(notes))
 			if err != nil {
-				http.Error(w, "encode error", http.StatusInternalServerError)
+				http.Error(w, "Internal error", http.StatusInternalServerError)
+
 				return
 			}
 			w.WriteHeader(http.StatusOK)
@@ -122,18 +119,16 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		} else if len(params) == 1 {
 
 			if _, exist := params["name"]; exist {
-				note, err := domain.Repo.FindByName(params.Get("name"))
+				note, err := domain.Repo.FindByName(ctx, params.Get("name"))
 
-				if err != nil {
-
-					http.Error(w, "Internal Error", http.StatusInternalServerError)
-
+				if writeError(w, err) {
 					return
 				}
 
 				data, err := json.Marshal(nm.DomainToHTTP(note))
 				if err != nil {
-					http.Error(w, "encode error", http.StatusInternalServerError)
+					http.Error(w, "Internal error", http.StatusInternalServerError)
+
 					return
 				}
 				w.WriteHeader(http.StatusOK)
@@ -142,16 +137,15 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if _, exist := params["ancestor"]; exist {
-				notes, err := domain.Repo.FindByAncestor(params.Get("ancestor"))
-				if err != nil {
-					http.Error(w, "Internal Error", http.StatusInternalServerError)
-
+				notes, err := domain.Repo.FindByAncestor(ctx, params.Get("ancestor"))
+				if writeError(w, err) {
 					return
 				}
 
 				data, err := json.Marshal(nm.DomainToHTTPSlice(notes))
 				if err != nil {
-					http.Error(w, "encode error", http.StatusInternalServerError)
+					http.Error(w, "Internal error", http.StatusInternalServerError)
+
 					return
 				}
 				w.WriteHeader(http.StatusOK)
@@ -181,10 +175,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = domain.Repo.Insert(nm.HTTPToDomain(n))
-		if err != nil {
-			http.Error(w, "Internal Error", http.StatusInternalServerError)
-
+		_, err = domain.Repo.Insert(ctx, nm.HTTPToDomain(n))
+		if writeError(w, err) {
 			return
 		}
 

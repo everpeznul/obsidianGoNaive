@@ -1,15 +1,19 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type NoteRepository interface {
-	Insert(note Note) (uuid.UUID, error)
-	GetByID(id uuid.UUID) (Note, error)
-	GetAll() ([]Note, error)
-	UpdateById(note Note) error
-	DeleteById(id uuid.UUID) error
-	FindByName(name string) (Note, error)
-	FindByAncestor(ancestor string) ([]Note, error)
+	Insert(ctx context.Context, note Note) (uuid.UUID, error)
+	GetByID(ctx context.Context, id uuid.UUID) (Note, error)
+	GetAll(ctx context.Context) ([]Note, error)
+	UpdateById(ctx context.Context, note Note) error
+	DeleteById(ctx context.Context, id uuid.UUID) error
+	FindByName(ctx context.Context, name string) (Note, error)
+	FindByAncestor(ctx context.Context, ancestor string) ([]Note, error)
 }
 
 var Repo NoteRepository

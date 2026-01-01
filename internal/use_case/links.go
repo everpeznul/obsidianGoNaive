@@ -5,9 +5,9 @@ type Linker struct {
 
 func (l *Linker) Format(n Noter) []string {
 
-	founder := n.FindFounder()
-	ancestor := n.FindAncestor()
-	father := n.FindFather()
+	founder, _ := n.FindFounder()
+	ancestor, _ := n.FindAncestor()
+	father, _ := n.FindFather()
 
 	return []string{founder, ancestor, father}
 }

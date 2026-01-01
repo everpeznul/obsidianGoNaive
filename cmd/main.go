@@ -10,6 +10,7 @@ import (
 	"obsidianGoNaive/internal/infrastructure/database"
 	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
 	"obsidianGoNaive/internal/use_case"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -35,8 +36,19 @@ func main() {
 	mux.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
 	mux.HandleFunc("/notes", obsiHttp.NotesHandler)
 
-	handler := obsiHttp.JsonMiddleware(mux)
-	http.ListenAndServe(":8080", handler)
+	handler := obsiHttp.TimeoutMiddleware(
+		obsiHttp.JsonMiddleware(
+			mux))
+
+	srv := &http.Server{
+		Addr:              ":8080",
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	srv.ListenAndServe()
 }
 
 func createDatabaseConnection() (*sql.DB, error) {

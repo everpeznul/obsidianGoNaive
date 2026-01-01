@@ -1,6 +1,7 @@
 package use_case
 
 import (
+	"context"
 	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/infrastructure/database"
 )
@@ -18,7 +19,7 @@ type Updater struct {
 	Tager
 }
 
-func (u *Updater) Update(oldNote domain.Note) error {
+func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 
 	note := domain.ReturnTypesNote(oldNote)
 	links := u.Linker.Format(note)
@@ -26,7 +27,7 @@ func (u *Updater) Update(oldNote domain.Note) error {
 
 	newNote := &domain.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 
-	u.Repo.UpdateById(*newNote)
+	u.Repo.UpdateById(ctx, *newNote)
 
 	return nil
 }

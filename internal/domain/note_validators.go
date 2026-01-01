@@ -4,9 +4,9 @@ import "strings"
 import "regexp"
 
 type Noter interface {
-	FindFather() string
-	FindAncestor() string
-	FindFounder() string
+	FindFather() (string, error)
+	FindAncestor() (string, error)
+	FindFounder() (string, error)
 }
 
 var (

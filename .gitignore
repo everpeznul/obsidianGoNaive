@@ -19,6 +19,7 @@ ehthumbs.db
 Thumbs.db
 .gptree_config
 gptree_output.txt
+coverage.out
 
 # Go-специфичные файлы
 *.exe

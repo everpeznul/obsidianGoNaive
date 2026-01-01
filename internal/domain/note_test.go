@@ -71,7 +71,7 @@ func TestNote_FindFounder(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			note := Note{Title: tt.noteTitle}
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -103,7 +103,7 @@ func TestNote_FindFather(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			note := Note{Title: tt.noteTitle}
-			result := note.FindFather()
+			result, _ := note.FindFather()
 
 			if result != tt.expected {
 				t.Errorf("FindFather() for '%s' = %v, want %v",
@@ -136,7 +136,7 @@ func TestNote_FindAncestor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			note := Note{Title: tt.noteTitle}
-			result := note.FindAncestor()
+			result, _ := note.FindAncestor()
 
 			if result != tt.expected {
 				t.Errorf("FindAncestor() for '%s' = %v, want %v",

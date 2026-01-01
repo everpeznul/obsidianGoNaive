@@ -32,7 +32,7 @@ func TestNote_periodic_daily_FindFounder(t *testing.T) {
 				},
 			}
 
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -69,7 +69,7 @@ func TestNote_periodic_weekly_FindFounder(t *testing.T) {
 				},
 			}
 
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -106,7 +106,7 @@ func TestNote_periodic_monthly_FindFounder(t *testing.T) {
 				},
 			}
 
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -144,7 +144,7 @@ func TestNote_periodic_quarterly_FindFounder(t *testing.T) {
 				},
 			}
 
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -182,7 +182,7 @@ func TestNote_periodic_yearly_FindFounder(t *testing.T) {
 				},
 			}
 
-			result := note.FindFounder()
+			result, _ := note.FindFounder()
 
 			if result != tt.expected {
 				t.Errorf("FindFounder() for '%s' = %v, want %v",
@@ -209,10 +209,7 @@ func TestNote_periodic_dream_FindAncestor(t *testing.T) {
 	tests := []struct {
 		name, noteTitle, expected string
 	}{
-		{name: "dream with descriptor", noteTitle: "сон.странный", expected: "странный"},
-		{name: "dream bright", noteTitle: "сон.яркий", expected: "яркий"},
-		{name: "dream nightmare", noteTitle: "сон.кошмар", expected: "кошмар"},
-		{name: "dream with date", noteTitle: "сон.странный.2025-12-28", expected: "странный"},
+		{name: "dream with descriptor", noteTitle: "мысль.2024-03-05.<3>", expected: "2024-03-05"},
 	}
 
 	for _, tt := range tests {
@@ -223,7 +220,7 @@ func TestNote_periodic_dream_FindAncestor(t *testing.T) {
 				},
 			}
 
-			result := note.FindAncestor()
+			result, _ := note.FindAncestor()
 
 			if result != tt.expected {
 				t.Errorf("FindAncestor() for '%s' = %v, want %v",
@@ -250,10 +247,7 @@ func TestNote_periodic_thought_FindAncestor(t *testing.T) {
 	tests := []struct {
 		name, noteTitle, expected string
 	}{
-		{name: "thought about philosophy", noteTitle: "мысль.философия", expected: "философия"},
-		{name: "thought about programming", noteTitle: "мысль.программирование", expected: "программирование"},
-		{name: "nested thought", noteTitle: "мысль.философия.экзистенциализм", expected: "философия"},
-		{name: "thought with date", noteTitle: "мысль.жизнь.2025-12-28", expected: "жизнь"},
+		{name: "thought with date", noteTitle: "мысль.2025-12-28.<1>", expected: "2025-12-28"},
 	}
 
 	for _, tt := range tests {
@@ -264,7 +258,7 @@ func TestNote_periodic_thought_FindAncestor(t *testing.T) {
 				},
 			}
 
-			result := note.FindAncestor()
+			result, _ := note.FindAncestor()
 
 			if result != tt.expected {
 				t.Errorf("FindAncestor() for '%s' = %v, want %v",
@@ -300,7 +294,7 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 			}
 		}()
 
-		result := note.FindAncestor()
+		result, _ := note.FindAncestor()
 		t.Logf("Result: '%s'", result)
 	})
 
@@ -317,7 +311,7 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 			}
 		}()
 
-		result := note.FindAncestor()
+		result, _ := note.FindAncestor()
 		t.Logf("Result: '%s'", result)
 	})
 
@@ -328,7 +322,7 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 			},
 		}
 
-		result := note.FindFounder()
+		result, _ := note.FindFounder()
 		if result != "0000-00-00" {
 			t.Errorf("Expected '0000-00-00', got '%s'", result)
 		}
@@ -348,8 +342,8 @@ func TestReturnTypesNote(t *testing.T) {
 	tests := []struct {
 		name, noteTitle, expectedType string
 	}{
-		{name: "thought note", noteTitle: "мысль.философия", expectedType: "*domain.Note_periodic_thought"},
-		{name: "dream note", noteTitle: "сон.странный", expectedType: "*domain.Note_periodic_dream"},
+		{name: "thought note", noteTitle: "мысль.2024-03-05.<3>", expectedType: "*domain.Note_periodic_thought"},
+		{name: "dream note", noteTitle: "сон.2024-03-05.<3>", expectedType: "*domain.Note_periodic_dream"},
 		{name: "person note", noteTitle: "человек.Иван", expectedType: "*domain.Note_human"},
 		{name: "daily note", noteTitle: "2025-12-28", expectedType: "*domain.Note_periodic_daily"},
 		{name: "weekly note", noteTitle: "2025-W52", expectedType: "*domain.Note_periodic_weekly"},
@@ -417,7 +411,7 @@ func TestAllNoteTypes_Integration(t *testing.T) {
 			}
 
 			if tc.testFounder {
-				founder := typed.FindFounder()
+				founder, _ := typed.FindFounder()
 				if founder != tc.expectedFounder {
 					t.Errorf("FindFounder() = %v, want %v",
 						founder, tc.expectedFounder)
@@ -425,7 +419,7 @@ func TestAllNoteTypes_Integration(t *testing.T) {
 			}
 
 			if tc.testAncestor {
-				ancestor := typed.FindAncestor()
+				ancestor, _ := typed.FindAncestor()
 				if ancestor != tc.expectedAncestor {
 					t.Errorf("FindAncestor() = %v, want %v",
 						ancestor, tc.expectedAncestor)

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -13,7 +14,7 @@ type PgDB struct {
 	DB *sql.DB
 }
 
-func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
+func (p *PgDB) Insert(ctx context.Context, note domain.Note) (uuid.UUID, error) {
 
 	newId := uuid.New()
 
@@ -23,7 +24,9 @@ func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 
 	query := `INSERT INTO notes (id, title, path, class, tags, links, content, create_time, update_time) 
               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	_, err := p.DB.Exec(query,
+	_, err := p.DB.ExecContext(
+		ctx,
+		query,
 		newNote.Id,
 		newNote.Title,
 		newNote.Path,
@@ -42,10 +45,10 @@ func (p *PgDB) Insert(note domain.Note) (uuid.UUID, error) {
 	return newId, nil
 }
 
-func (p *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
+func (p *PgDB) GetByID(ctx context.Context, id uuid.UUID) (domain.Note, error) {
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time
               FROM notes WHERE id = $1`
-	row := p.DB.QueryRow(query, id)
+	row := p.DB.QueryRowContext(ctx, query, id)
 
 	note := dbNote{}
 	err := row.Scan(
@@ -70,12 +73,12 @@ func (p *PgDB) GetByID(id uuid.UUID) (domain.Note, error) {
 	return nm.DatabaseToDomain(note), nil
 }
 
-func (p *PgDB) GetAll() ([]domain.Note, error) {
+func (p *PgDB) GetAll(ctx context.Context) ([]domain.Note, error) {
 	notes := make([]domain.Note, 0)
 
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time 
 			  FROM notes`
-	rows, err := p.DB.Query(query)
+	rows, err := p.DB.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed get all notes from database: %w", err)
 	}
@@ -109,7 +112,7 @@ func (p *PgDB) GetAll() ([]domain.Note, error) {
 	return notes, nil
 }
 
-func (p *PgDB) UpdateById(n domain.Note) error {
+func (p *PgDB) UpdateById(ctx context.Context, n domain.Note) error {
 	newNote := nm.DomainToDatabase(n)
 	query := `UPDATE notes 
               SET title = $1,
@@ -122,7 +125,9 @@ func (p *PgDB) UpdateById(n domain.Note) error {
                   update_time = $8
               WHERE id = $9`
 
-	_, err := p.DB.Exec(query,
+	_, err := p.DB.ExecContext(
+		ctx,
+		query,
 		newNote.Title,
 		newNote.Path,
 		newNote.Class,
@@ -141,9 +146,9 @@ func (p *PgDB) UpdateById(n domain.Note) error {
 	return nil
 }
 
-func (p *PgDB) DeleteById(id uuid.UUID) error {
+func (p *PgDB) DeleteById(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM notes WHERE id = $1`
-	_, err := p.DB.Exec(query, id)
+	_, err := p.DB.ExecContext(ctx, query, id)
 
 	if err != nil {
 		return fmt.Errorf("failed delete note in database with id=%s: %w", id, err)
@@ -152,14 +157,14 @@ func (p *PgDB) DeleteById(id uuid.UUID) error {
 	return nil
 }
 
-func (p *PgDB) FindByName(name string) (domain.Note, error) {
+func (p *PgDB) FindByName(ctx context.Context, name string) (domain.Note, error) {
 	newNote := dbNote{}
 
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time 
               FROM notes 
               WHERE right(path, strpos(reverse(path), '/') - 1) = $1`
 
-	err := p.DB.QueryRow(query, name+".md").Scan(
+	err := p.DB.QueryRowContext(ctx, query, name+".md").Scan(
 		&newNote.Id,
 		&newNote.Title,
 		&newNote.Path,
@@ -179,9 +184,9 @@ func (p *PgDB) FindByName(name string) (domain.Note, error) {
 	return nm.DatabaseToDomain(newNote), nil
 }
 
-// func (p *PgDB) FindAncestors(name string) (domain.Note, error) {}
+// func (p *PgDB) FindAncestors(ctx context.Context, name string) (domain.Note, error) {}
 
-func (p *PgDB) FindByAncestor(ancestor string) ([]domain.Note, error) {
+func (p *PgDB) FindByAncestor(ctx context.Context, ancestor string) ([]domain.Note, error) {
 
 	notes := make([]domain.Note, 0)
 
@@ -189,7 +194,7 @@ func (p *PgDB) FindByAncestor(ancestor string) ([]domain.Note, error) {
               FROM notes 
               WHERE right(path, strpos(reverse(path), '/') - 1) ILIKE $1`
 
-	rows, err := p.DB.Query(query, ancestor+"%")
+	rows, err := p.DB.QueryContext(ctx, query, ancestor+"%")
 	if err != nil {
 		return nil, fmt.Errorf("failed to find descendant of %s: %w", ancestor, err)
 	}
