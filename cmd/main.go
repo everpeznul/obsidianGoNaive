@@ -4,22 +4,33 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/infrastructure/database"
 	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
 	"obsidianGoNaive/internal/use_case"
+	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
+
+	base := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	obsiLog := base.With("package", "main")
+
+	use_case.UseCaseSetLog(base.With("package", "use_case"))
+	obsiHttp.HttpSetLog(base.With("package", "http"))
+	domain.DomainSetLog(base.With("package", "domain"))
+
 	// Создание подключения к базе данных
 	db, err := createDatabaseConnection()
 	if err != nil {
-		log.Fatal("Ошибка создания подключения:", err)
+
+		obsiLog.Error("cannot connect to database")
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -48,6 +59,8 @@ func main() {
 		WriteTimeout:      15 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
+
+	obsiLog.Info("Server start")
 	srv.ListenAndServe()
 }
 

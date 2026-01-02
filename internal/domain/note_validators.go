@@ -1,12 +1,15 @@
 package domain
 
-import "strings"
-import "regexp"
+import (
+	"context"
+	"regexp"
+	"strings"
+)
 
 type Noter interface {
-	FindFather() (string, error)
-	FindAncestor() (string, error)
-	FindFounder() (string, error)
+	FindFather(context.Context) (string, error)
+	FindAncestor(context.Context) (string, error)
+	FindFounder(context.Context) (string, error)
 }
 
 var (
@@ -31,36 +34,48 @@ func ReturnTypesNote(n Note) Noter {
 	switch {
 
 	case strings.HasPrefix(n.Title, "мысль"):
+
+		obsiLog.Debug("ReturnTypesNote", "type", "Thought")
 		return &Note_periodic_thought{Note_periodic{n}}
 
 	case strings.HasPrefix(n.Title, "сон"):
+		obsiLog.Debug("ReturnTypesNote", "type", "Dream")
 		return &Note_periodic_dream{Note_periodic{n}}
 
 	case strings.HasPrefix(n.Title, "человек"):
+		obsiLog.Debug("ReturnTypesNote", "type", "Human")
 		return &Note_human{n}
 
 	case IsDay(n.Title):
+		obsiLog.Debug("ReturnTypesNote", "type", "Daily")
 		return &Note_periodic_daily{Note_periodic{n}}
 
 	case IsWeek(n.Title):
+		obsiLog.Debug("ReturnTypesNote", "type", "Weekly")
 		return &Note_periodic_weekly{Note_periodic{n}}
 
 	case IsMonth(n.Title):
+		obsiLog.Debug("ReturnTypesNote", "type", "Monthly")
 		return &Note_periodic_monthly{Note_periodic{n}}
 
 	case IsQuarter(n.Title):
+		obsiLog.Debug("ReturnTypesNote", "type", "Quarterly")
 		return &Note_periodic_quarterly{Note_periodic{n}}
 
 	case IsYear(n.Title):
+		obsiLog.Debug("ReturnTypesNote", "type", "Yearly")
 		return &Note_periodic_yearly{Note_periodic{n}}
 
 	default:
+
+		obsiLog.Debug("ReturnTypesNote", "type", "Note")
 		return &n
+
 	}
 }
 
-func Exists(title string) bool {
-	_, err := Repo.FindByName(title)
+func Exists(ctx context.Context, title string) bool {
+	_, err := Repo.FindByName(ctx, title)
 
 	if err != nil {
 		//если заметка не существует, то создать заметку и обновить её содержимое
@@ -72,5 +87,7 @@ func Exists(title string) bool {
 		    return true
 		}
 	*/
+
+	obsiLog.Debug("Exist", "title", title, "result", err == nil)
 	return true
 }

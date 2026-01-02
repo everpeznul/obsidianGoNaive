@@ -180,7 +180,6 @@ func (p *PgDB) FindByName(ctx context.Context, name string) (domain.Note, error)
 		return domain.Note{}, fmt.Errorf("failed to get note '%s' from database: %w", name, err)
 	}
 
-	fmt.Print(newNote)
 	return nm.DatabaseToDomain(newNote), nil
 }
 

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -19,16 +20,18 @@ type Note struct {
 	UpdateTime time.Time
 }
 
-func (n *Note) FindFounder() (string, error) {
+func (n *Note) FindFounder(ctx context.Context) (string, error) {
 
 	founder := strings.Split(n.Title, ".")[0]
-	if Exists(founder) {
+	if Exists(ctx, founder) {
 
 	}
 
+	obsiLog.Debug("Note FindFounder", "founder", founder)
+
 	return founder, nil
 }
-func (n *Note) FindAncestor() (string, error) {
+func (n *Note) FindAncestor(ctx context.Context) (string, error) {
 
 	a := strings.Split(n.Title, ".")
 	ancestor := ""
@@ -44,20 +47,23 @@ func (n *Note) FindAncestor() (string, error) {
 		}
 	}
 
-	if Exists(ancestor) {
+	if Exists(ctx, ancestor) {
 	}
-	return ancestor, nil
 
+	obsiLog.Debug("Note FindAncestor", "ancestor", ancestor)
+	return ancestor, nil
 }
-func (n *Note) FindFather() (string, error) {
+func (n *Note) FindFather(ctx context.Context) (string, error) {
 
 	f := strings.Split(n.Title, ".")
 	if len(f) == 1 {
 		return f[0], nil
 	}
 	father := strings.Join(f[:len(f)-1], ".")
-	if Exists(father) {
+	if Exists(ctx, father) {
 
 	}
+
+	obsiLog.Debug("Note FindFather", "father", father)
 	return father, nil
 }

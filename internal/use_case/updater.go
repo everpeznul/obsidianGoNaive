@@ -22,12 +22,13 @@ type Updater struct {
 func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 
 	note := domain.ReturnTypesNote(oldNote)
-	links := u.Linker.Format(note)
-	tags := u.Tager.Format(note)
+	links := u.Linker.Format(ctx, note)
+	tags := u.Tager.Format(ctx, note)
 
 	newNote := &domain.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 
 	u.Repo.UpdateById(ctx, *newNote)
+	obsiLog.Debug("Updater debug", "links", links, "tags", tags, "note", newNote)
 
 	return nil
 }

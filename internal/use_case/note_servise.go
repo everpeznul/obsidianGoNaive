@@ -1,7 +1,9 @@
 package use_case
 
+import "context"
+
 type Noter interface {
-	FindFather() (string, error)
-	FindAncestor() (string, error)
-	FindFounder() (string, error)
+	FindFather(context.Context) (string, error)
+	FindAncestor(context.Context) (string, error)
+	FindFounder(context.Context) (string, error)
 }

@@ -12,6 +12,7 @@ import (
 // /
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
+	obsiLog.Debug("Home handler")
 	w.Write([]byte("Home page"))
 }
 
@@ -25,29 +26,36 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Invalid UUID format", http.StatusBadRequest)
+
+		obsiLog.Debug("NotesUUIDHandler error", "error", "invalid uuid", "id", id)
 		return
 	}
 
 	switch r.Method {
 
-	case "GET":
+	case http.MethodGet:
 		note, err := domain.Repo.GetByID(ctx, id)
 
 		if writeError(w, err) {
 			return
 		}
 
+		obsiLog.Debug("NotesUUIDHandler GET", "note", note)
+
 		data, err := json.Marshal(nm.DomainToHTTP(note))
 		if err != nil {
 
-			http.Error(w, "Internal error", http.StatusInternalServerError)
+			obsiLog.Debug("NotesUUIDHandler error", "error", "marshal")
+			http.Error(w, "Marshal error", http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write(data)
+
+		obsiLog.Debug("NotesUUIDHandler GET OK")
 		return
 
-	case "PUT":
+	case http.MethodPut:
 		var note httpNote
 
 		// Парсим JSON из request body в структуру
@@ -55,15 +63,23 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+
+			obsiLog.Debug("NotesUUIDHandler PUT Error", "error", "invalid json")
 			return
 		}
+
+		obsiLog.Debug("NotesUUIDHandler PUT", "httpNote", note)
 
 		domainNote := nm.HTTPToDomain(note)
 		if id != domainNote.Id {
 			http.Error(w, "Note id != id", http.StatusBadRequest)
+
+			obsiLog.Debug("NotesUUIDHandler PUT Error", "error", "strange id", "id", id, "note id", domainNote.Id)
 			return
 		}
 		domainNote.Id = id
+
+		obsiLog.Debug("NotesUUIDHandler PUT", "domainNote", domainNote)
 
 		err = use_case.Updtr.Update(ctx, domainNote)
 
@@ -71,19 +87,22 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+		obsiLog.Debug("NotesUUIDHandler PUT OK")
 		return
 
-	case "DELETE":
+	case http.MethodDelete:
 		err := domain.Repo.DeleteById(ctx, id)
 
 		if writeError(w, err) {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+		obsiLog.Debug("NotesUUIDHandler DELETE OK", "id", id)
 		return
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		obsiLog.Debug("NotesUUIDHandler default")
 
 		return
 	}
@@ -98,7 +117,7 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 
 	// поиск по имени или предку
-	case "GET":
+	case http.MethodGet:
 		params := r.URL.Query()
 
 		if len(params) == 0 {
@@ -111,10 +130,13 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				http.Error(w, "Internal error", http.StatusInternalServerError)
 
+				obsiLog.Debug("NotesHandler GET all error", "error", "marshal")
 				return
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(data)
+
+			obsiLog.Debug("NotesHandler GET all OK")
 			return
 		} else if len(params) == 1 {
 
@@ -129,10 +151,13 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					http.Error(w, "Internal error", http.StatusInternalServerError)
 
+					obsiLog.Debug("NotesHandler GET name error", "error", "marshal")
 					return
 				}
 				w.WriteHeader(http.StatusOK)
 				w.Write(data)
+
+				obsiLog.Debug("NotesHandler GET note OK", "note", note)
 				return
 			}
 
@@ -146,10 +171,13 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					http.Error(w, "Internal error", http.StatusInternalServerError)
 
+					obsiLog.Debug("NotesHandler GET ancestor error", "error", "marshal")
 					return
 				}
 				w.WriteHeader(http.StatusOK)
 				w.Write(data)
+
+				obsiLog.Debug("NotesHandler GET ancestor OK", "notes", notes)
 				return
 
 			}
@@ -158,33 +186,42 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		} else if len(params) == 2 {
 			http.Error(w, "Two invalid parameters", http.StatusBadRequest)
 
+			obsiLog.Debug("NotesHandler GET error", "error", "two param")
 			return
 		}
 
 		http.Error(w, "Too many parameters", http.StatusBadRequest)
+
+		obsiLog.Debug("NotesHandler GET error", "error", "to many param")
 		return
 
 	// создание новой заметки
-	case "POST":
+	case http.MethodPost:
 		n := httpNote{}
 
 		// Парсим JSON из request body в структуру
 		err := json.NewDecoder(r.Body).Decode(&n)
 		if err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+
+			obsiLog.Debug("NotesHandler POST error", "error", "marshal")
 			return
 		}
 
-		_, err = domain.Repo.Insert(ctx, nm.HTTPToDomain(n))
+		note := nm.HTTPToDomain(n)
+		_, err = domain.Repo.Insert(ctx, note)
 		if writeError(w, err) {
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
+
+		obsiLog.Debug("NotesHandler POST OK", "note", note)
 		return
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 
+		obsiLog.Debug("NotesHandler default error", "error", "wrong status")
 		return
 	}
 }
