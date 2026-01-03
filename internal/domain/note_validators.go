@@ -87,5 +87,5 @@ func Create(ctx context.Context, title string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("create ERROR: %w", err)
 	}
 
-	return id, err
+	return id, nil
 }

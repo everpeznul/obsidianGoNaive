@@ -25,14 +25,30 @@ func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 	note := domain.ReturnTypesNote(oldNote)
 	obsiLog.Debug("Update ReturnTypesNote", fmt.Sprintf("%T", note))
 
-	links := u.Linker.Format(ctx, note)
-	tags := u.Tager.Format(ctx, note)
+	links, err := u.Linker.Format(ctx, note)
+	if err != nil {
+
+		obsiLog.Error("Update links Note ERROR", "note", oldNote, "error", err)
+		return fmt.Errorf("update links note ERROR: %w", err)
+	}
+
+	tags, err := u.Tager.Format(ctx, note)
+	if err != nil {
+
+		obsiLog.Error("Update tags Note ERROR", "note", oldNote, "error", err)
+		return fmt.Errorf("update tags note ERROR: %w", err)
+	}
 
 	newNote := &domain.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 
-	u.Repo.UpdateById(ctx, *newNote)
-	obsiLog.Debug("Updater debug", "links", links, "tags", tags, "note", newNote)
+	err = u.Repo.UpdateById(ctx, *newNote)
+	if err != nil {
 
+		obsiLog.Error("Repo Update Note ERROR", "note", newNote, "error", err)
+		return fmt.Errorf("repo update note ERROR: %w", err)
+	}
+
+	obsiLog.Debug("Successful Note Update", "note", newNote)
 	return nil
 }
 
