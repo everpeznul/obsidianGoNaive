@@ -26,8 +26,8 @@ func TestNote_periodic_daily_FindFounder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_daily{
-				Note_periodic{
+			note := NotePeriodicDaily{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -63,8 +63,8 @@ func TestNote_periodic_weekly_FindFounder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_weekly{
-				Note_periodic{
+			note := NotePeriodicWeekly{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -100,8 +100,8 @@ func TestNote_periodic_monthly_FindFounder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_monthly{
-				Note_periodic{
+			note := NotePeriodicMonthly{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -138,8 +138,8 @@ func TestNote_periodic_quarterly_FindFounder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_quarterly{
-				Note_periodic{
+			note := NotePeriodicQuarterly{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -176,8 +176,8 @@ func TestNote_periodic_yearly_FindFounder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_yearly{
-				Note_periodic{
+			note := NotePeriodicYearly{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -214,8 +214,8 @@ func TestNote_periodic_dream_FindAncestor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_dream{
-				Note_periodic{
+			note := NotePeriodicDream{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -252,8 +252,8 @@ func TestNote_periodic_thought_FindAncestor(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			note := Note_periodic_thought{
-				Note_periodic{
+			note := NotePeriodicThought{
+				NotePeriodic{
 					Note{Title: tt.noteTitle},
 				},
 			}
@@ -279,8 +279,8 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 	InitRepo(mockRepo)
 
 	t.Run("dream with single word title", func(t *testing.T) {
-		note := Note_periodic_dream{
-			Note_periodic{
+		note := NotePeriodicDream{
+			NotePeriodic{
 				Note{Title: "сон"},
 			},
 		}
@@ -299,8 +299,8 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("thought with single word title", func(t *testing.T) {
-		note := Note_periodic_thought{
-			Note_periodic{
+		note := NotePeriodicThought{
+			NotePeriodic{
 				Note{Title: "мысль"},
 			},
 		}
@@ -316,8 +316,8 @@ func TestNote_periodic_types_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("empty title", func(t *testing.T) {
-		note := Note_periodic_daily{
-			Note_periodic{
+		note := NotePeriodicDaily{
+			NotePeriodic{
 				Note{Title: ""},
 			},
 		}

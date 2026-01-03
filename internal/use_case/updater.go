@@ -2,6 +2,7 @@ package use_case
 
 import (
 	"context"
+	"fmt"
 	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/infrastructure/database"
 )
@@ -22,6 +23,8 @@ type Updater struct {
 func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 
 	note := domain.ReturnTypesNote(oldNote)
+	obsiLog.Debug("Update ReturnTypesNote", fmt.Sprintf("%T", note))
+
 	links := u.Linker.Format(ctx, note)
 	tags := u.Tager.Format(ctx, note)
 

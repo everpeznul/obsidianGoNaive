@@ -6,7 +6,7 @@ import (
 
 var obsiLog *slog.Logger
 
-func HttpSetLog(log *slog.Logger) {
+func SetLog(log *slog.Logger) {
 
 	obsiLog = log
 }

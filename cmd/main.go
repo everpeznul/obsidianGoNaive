@@ -18,45 +18,73 @@ import (
 	_ "github.com/lib/pq"
 )
 
+var base = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+var obsiLog = base.With("package", "main")
+
+func createDatabaseConnection(DB config.DBConfig) (*sql.DB, error) {
+
+	// подключение к базе данных
+	connStr := DB.DSN()
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка открытия соединения: %w", err)
+	}
+
+	// проверка связи с базой данных
+	if err = db.Ping(); err != nil {
+		return nil, fmt.Errorf("ошибка ping базы данных: %w", err)
+	}
+
+	obsiLog.Info("Successful connect to database")
+	return db, nil
+}
+
 func main() {
+
+	// инициализация логеров в пакетах
+	use_case.SetLog(base.With("package", "use_case"))
+	obsiHttp.SetLog(base.With("package", "http"))
+	domain.SetLog(base.With("package", "domain"))
+
+	// получение конфигов
 	wd, err := os.Getwd()
-	cfgRel := "/configs/config.yaml"
-	cfgPath := filepath.Clean(filepath.Join(wd, cfgRel))
-	cnfg, _ := config.Load(cfgPath)
+	if err != nil {
 
-	base := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-	obsiLog := base.With("package", "main")
+		obsiLog.Error("Getwd ERROR", "error", err)
+		panic(nil)
+	}
+	cfgPathRel := "/configs/config.yaml"
+	cfgPath := filepath.Clean(filepath.Join(wd, cfgPathRel))
+	cfg, err := config.Load(cfgPath)
+	if err != nil {
 
-	use_case.UseCaseSetLog(base.With("package", "use_case"))
-	obsiHttp.HttpSetLog(base.With("package", "http"))
-	domain.DomainSetLog(base.With("package", "domain"))
+		obsiLog.Error("config.Load ERROR", "error", err)
+	}
 
-	// Создание подключения к базе данных
-	db, err := createDatabaseConnection(cnfg.DB)
+	// подключение к базе данных
+	db, err := createDatabaseConnection(cfg.DB)
 	if err != nil {
 
 		obsiLog.Error("cannot connect to database", "error", err)
-		os.Exit(1)
+		panic(nil)
 	}
 	defer db.Close()
 
-	// Создание репозитория через композицию
-	noteRepo := &database.PgDB{DB: db}
-	domain.InitRepo(noteRepo)
-	use_case.InitUpdater(noteRepo)
+	// создание и инициализация репозитория и помошников
+	repo := &database.PgDB{DB: db}
+	domain.InitRepo(repo)
+	use_case.InitUpdater(repo)
 
+	// создание сервера
 	mux := http.NewServeMux()
-
 	//http.HandleFunc("/", obsiHttp.HomeHandler)
 	fs := http.FileServer(http.Dir("./web"))
 	mux.Handle("/", fs)
 	mux.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
 	mux.HandleFunc("/notes", obsiHttp.NotesHandler)
-
 	handler := obsiHttp.TimeoutMiddleware(
 		obsiHttp.JsonMiddleware(
 			mux))
-
 	srv := &http.Server{
 		Addr:              ":8080",
 		Handler:           handler,
@@ -66,24 +94,7 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
+	// запуск сервера
 	obsiLog.Info("Server start")
 	srv.ListenAndServe()
-}
-
-func createDatabaseConnection(DB config.DBConfig) (*sql.DB, error) {
-
-	connStr := DB.DSN()
-
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка открытия соединения: %w", err)
-	}
-
-	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("ошибка ping базы данных: %w", err)
-	}
-
-	fmt.Println("Успешное подключение к базе данных")
-
-	return db, nil
 }

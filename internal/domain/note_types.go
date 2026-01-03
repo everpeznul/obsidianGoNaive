@@ -2,107 +2,159 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"strings"
 )
 
-type Note_human struct {
+type NoteHuman struct {
 	Note
 }
-type Note_periodic struct {
+type NotePeriodic struct {
 	Note
 }
-type Note_periodic_daily struct {
-	Note_periodic
+type NotePeriodicDaily struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_daily) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicDaily) FindFounder(ctx context.Context) (string, error) {
 
-	if Exists(ctx, "0000-00-00") {
+	ok, err := Exists(ctx, "0000-00-00")
+	if !ok {
+
+		obsiLog.Error("Daily FindFounder ERROR", "error", err)
+		return "", fmt.Errorf("daily FindFounder not find: %w", err)
 	}
 
-	obsiLog.Debug("Daily FindFounder", "founder", "0000-00-00")
+	obsiLog.Debug("Daily FindFounder", "title", "0000-00-00")
 	return "0000-00-00", nil
 }
 
-type Note_periodic_weekly struct {
-	Note_periodic
+type NotePeriodicWeekly struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_weekly) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicWeekly) FindFounder(ctx context.Context) (string, error) {
 
-	if Exists(ctx, "0000-W00") {
+	ok, err := Exists(ctx, "0000-W00")
+	if !ok {
+
+		obsiLog.Error("Weekly FindFounder ERROR", "error", err)
+		return "", fmt.Errorf("weekly FindFounder not find: %w", err)
 	}
 
-	obsiLog.Debug("Weekly FindFounder", "founder", "0000-W00")
+	obsiLog.Debug("Weekly FindFounder", "title", "0000-W00")
 	return "0000-W00", nil
 }
 
-type Note_periodic_monthly struct {
-	Note_periodic
+type NotePeriodicMonthly struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_monthly) FindFounder(ctx context.Context) (string, error) {
-	if Exists(ctx, "0000-00") {
+func (n *NotePeriodicMonthly) FindFounder(ctx context.Context) (string, error) {
+
+	ok, err := Exists(ctx, "0000-00")
+	if !ok {
+
+		obsiLog.Error("Monthly FindFounder ERROR", "error", err)
+		return "", fmt.Errorf("monthly FindFounder not find: %w", err)
 	}
 
-	obsiLog.Debug("Monthly FindFounder", "founder", "0000-00")
+	obsiLog.Debug("Monthly FindFounder", "title", "0000-00")
 	return "0000-00", nil
 }
 
-type Note_periodic_quarterly struct {
-	Note_periodic
+type NotePeriodicQuarterly struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_quarterly) FindFounder(ctx context.Context) (string, error) {
-	if Exists(ctx, "0000-Q0") {
+func (n *NotePeriodicQuarterly) FindFounder(ctx context.Context) (string, error) {
+
+	ok, err := Exists(ctx, "0000-Q0")
+	if !ok {
+
+		obsiLog.Error("Quarterly FindFounder ERROR", "error", err)
+		return "", fmt.Errorf("quarterly FindFounder not find: %w", err)
 	}
 
-	obsiLog.Debug("Quarterly FindFounder", "founder", "0000-Q0")
+	obsiLog.Debug("Quarterly FindFounder", "title", "0000-Q0")
 	return "0000-Q0", nil
 }
 
-type Note_periodic_yearly struct {
-	Note_periodic
+type NotePeriodicYearly struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_yearly) FindFounder(ctx context.Context) (string, error) {
-	if Exists(ctx, "0000") {
+func (n *NotePeriodicYearly) FindFounder(ctx context.Context) (string, error) {
+
+	ok, err := Exists(ctx, "0000")
+	if !ok {
+
+		obsiLog.Error("Yearly FindFounder ERROR", "error", err)
+		return "", fmt.Errorf("yearly FindFounder not find: %w", err)
 	}
 
-	obsiLog.Debug("Yearly FindFounder", "founder", "0000")
+	obsiLog.Debug("Yearly FindFounder", "title", "0000")
 	return "0000", nil
 }
 
-type Note_periodic_dream struct {
-	Note_periodic
+type NotePeriodicDream struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_dream) FindAncestor(ctx context.Context) (string, error) {
+func (n *NotePeriodicDream) FindAncestor(ctx context.Context) (string, error) {
 
-	ancestor := strings.Split(n.Title, ".")
-	if len(ancestor) != 3 {
-		return "", nil
+	a := strings.Split(n.Title, ".")
+	if len(a) != 3 {
+		return "", fmt.Errorf("dream not valid")
 	}
-	if Exists(ctx, ancestor[1]) {
+	ancestor := a[1]
+
+	ok, err := Exists(ctx, ancestor)
+	if !ok {
+
+		obsiLog.Error("Dream FindAncestor ERROR", "error", err)
+
+		id, err := Create(ctx, ancestor)
+		if err != nil {
+
+			obsiLog.Error("Dream FindAncestor ERROR", "error", err)
+			return "", fmt.Errorf("dream FindAncestor ERROR: %w", err)
+		}
+
+		obsiLog.Info("Dream FindAncestor Create note", "id", id)
 	}
 
-	obsiLog.Debug("Dream FindAncestor", "ancestor", ancestor[1])
-	return ancestor[1], nil
+	obsiLog.Debug("Dream FindAncestor", "title", ancestor)
+	return ancestor, nil
 }
 
-type Note_periodic_thought struct {
-	Note_periodic
+type NotePeriodicThought struct {
+	NotePeriodic
 }
 
-func (n *Note_periodic_thought) FindAncestor(ctx context.Context) (string, error) {
+func (n *NotePeriodicThought) FindAncestor(ctx context.Context) (string, error) {
 
-	ancestor := strings.Split(n.Title, ".")
-	if len(ancestor) != 3 {
-		return "", nil
+	a := strings.Split(n.Title, ".")
+	if len(a) != 3 {
+		return "", fmt.Errorf("thought not valid")
 	}
-	if Exists(ctx, ancestor[1]) {
+	ancestor := a[1]
+
+	ok, err := Exists(ctx, ancestor)
+	if !ok {
+
+		obsiLog.Error("Thought FindAncestor ERROR", "error", err)
+
+		id, err := Create(ctx, ancestor)
+		if err != nil {
+
+			obsiLog.Error("Thought FindAncestor ERROR", "error", err)
+			return "", fmt.Errorf("thought FindAncestor ERROR: %w", err)
+		}
+
+		obsiLog.Info("Thought FindAncestor Create note", "id", id)
 	}
 
-	obsiLog.Debug("Thought", "ancestor", ancestor[1])
-	return ancestor[1], nil
+	obsiLog.Debug("Thought FindAncestor", "title", ancestor)
+	return ancestor, nil
 }

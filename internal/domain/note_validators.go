@@ -2,15 +2,12 @@ package domain
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
-)
 
-type Noter interface {
-	FindFather(context.Context) (string, error)
-	FindAncestor(context.Context) (string, error)
-	FindFounder(context.Context) (string, error)
-}
+	"github.com/google/uuid"
+)
 
 var (
 	ReYear    = regexp.MustCompile(`^\d{4}$`)
@@ -26,68 +23,69 @@ func IsQuarter(s string) bool { return ReQuarter.MatchString(s) }
 func IsWeek(s string) bool    { return ReWeek.MatchString(s) }
 func IsDay(s string) bool     { return ReDay.MatchString(s) }
 
-type Has struct {
-}
-
 func ReturnTypesNote(n Note) Noter {
 
 	switch {
 
 	case strings.HasPrefix(n.Title, "мысль"):
 
-		obsiLog.Debug("ReturnTypesNote", "type", "Thought")
-		return &Note_periodic_thought{Note_periodic{n}}
+		return &NotePeriodicThought{NotePeriodic{n}}
 
 	case strings.HasPrefix(n.Title, "сон"):
-		obsiLog.Debug("ReturnTypesNote", "type", "Dream")
-		return &Note_periodic_dream{Note_periodic{n}}
+
+		return &NotePeriodicDream{NotePeriodic{n}}
 
 	case strings.HasPrefix(n.Title, "человек"):
-		obsiLog.Debug("ReturnTypesNote", "type", "Human")
-		return &Note_human{n}
+
+		return &NoteHuman{n}
 
 	case IsDay(n.Title):
-		obsiLog.Debug("ReturnTypesNote", "type", "Daily")
-		return &Note_periodic_daily{Note_periodic{n}}
+
+		return &NotePeriodicDaily{NotePeriodic{n}}
 
 	case IsWeek(n.Title):
-		obsiLog.Debug("ReturnTypesNote", "type", "Weekly")
-		return &Note_periodic_weekly{Note_periodic{n}}
+
+		return &NotePeriodicWeekly{NotePeriodic{n}}
 
 	case IsMonth(n.Title):
-		obsiLog.Debug("ReturnTypesNote", "type", "Monthly")
-		return &Note_periodic_monthly{Note_periodic{n}}
+
+		return &NotePeriodicMonthly{NotePeriodic{n}}
 
 	case IsQuarter(n.Title):
-		obsiLog.Debug("ReturnTypesNote", "type", "Quarterly")
-		return &Note_periodic_quarterly{Note_periodic{n}}
+
+		return &NotePeriodicQuarterly{NotePeriodic{n}}
 
 	case IsYear(n.Title):
-		obsiLog.Debug("ReturnTypesNote", "type", "Yearly")
-		return &Note_periodic_yearly{Note_periodic{n}}
+
+		return &NotePeriodicYearly{NotePeriodic{n}}
 
 	default:
 
-		obsiLog.Debug("ReturnTypesNote", "type", "Note")
 		return &n
 
 	}
 }
 
-func Exists(ctx context.Context, title string) bool {
+func Exists(ctx context.Context, title string) (bool, error) {
+
 	_, err := Repo.FindByName(ctx, title)
 
 	if err != nil {
-		//если заметка не существует, то создать заметку и обновить её содержимое
+
+		return false, fmt.Errorf("note=%s not found: %w", title, err)
 	}
-	/*
-		if len(note) > 1 {
-		//такого быть не должно, нужно разрешать
 
-		    return true
-		}
-	*/
+	return true, nil
+}
 
-	obsiLog.Debug("Exist", "title", title, "result", err == nil)
-	return true
+func Create(ctx context.Context, title string) (uuid.UUID, error) {
+
+	id, err := Repo.Insert(ctx, Note{})
+
+	if err != nil {
+
+		return uuid.Nil, fmt.Errorf("create ERROR: %w", err)
+	}
+
+	return id, err
 }
