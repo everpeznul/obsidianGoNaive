@@ -20,6 +20,7 @@ Thumbs.db
 .gptree_config
 gptree_output.txt
 coverage.out
+.gitignore
 
 # Go-специфичные файлы
 *.exe

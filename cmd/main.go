@@ -6,17 +6,23 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"obsidianGoNaive/internal/config"
 	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/infrastructure/database"
 	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
 	"obsidianGoNaive/internal/use_case"
 	"os"
+	"path/filepath"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
 func main() {
+	wd, err := os.Getwd()
+	cfgRel := "/configs/config.yaml"
+	cfgPath := filepath.Clean(filepath.Join(wd, cfgRel))
+	cnfg, _ := config.Load(cfgPath)
 
 	base := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	obsiLog := base.With("package", "main")
@@ -26,10 +32,10 @@ func main() {
 	domain.DomainSetLog(base.With("package", "domain"))
 
 	// Создание подключения к базе данных
-	db, err := createDatabaseConnection()
+	db, err := createDatabaseConnection(cnfg.DB)
 	if err != nil {
 
-		obsiLog.Error("cannot connect to database")
+		obsiLog.Error("cannot connect to database", "error", err)
 		os.Exit(1)
 	}
 	defer db.Close()
@@ -64,9 +70,9 @@ func main() {
 	srv.ListenAndServe()
 }
 
-func createDatabaseConnection() (*sql.DB, error) {
+func createDatabaseConnection(DB config.DBConfig) (*sql.DB, error) {
 
-	connStr := "host=localhost port=5432 user=postgres password=mypass dbname=postgres sslmode=disable"
+	connStr := DB.DSN()
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
