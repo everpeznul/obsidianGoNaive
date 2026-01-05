@@ -1,29 +1,4 @@
-*.tmp
-*.log
-
-node_modules/
-.idea/
-dist/
-/db
-
-
-.env
-config.local.json
-
-# Системные файлы
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-.gptree_config
-gptree_output.txt
-coverage.out
-.gitignore
-
-# Go-специфичные файлы
+# Go artifacts
 *.exe
 *.exe~
 *.dll
@@ -31,16 +6,41 @@ coverage.out
 *.dylib
 *.test
 *.out
+coverage.out
 /vendor/
+
+# Node/build artifacts
+node_modules/
+dist/
+
+# IDE
 .vscode/
 .idea/
 
-# Временные файлы
+# Local data
+/db
+/data
+
+# Env / local config
+.env
+.env.local
+config.local.json
+
+# Temp/logs
 *.tmp
 *.log
 *.swp
 *.swo
 
-# Переменные окружения
-.env
-.env.local
+# OS junk
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Tooling artifacts
+.gptree_config
+gptree_output.txt

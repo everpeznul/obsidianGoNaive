@@ -1,8 +1,48 @@
-.gitignore
+# VCS
+.git
+.git/
 
+# IDE
+.vscode
+.vscode/
+.idea
+.idea/
+
+# Node/build artifacts (на всякий случай)
+node_modules
+node_modules/
+dist
+dist/
+
+# Go build/test artifacts
+*.test
+*.out
 coverage.out
 
-/data
+# Env/local config
+.env
+.env.*
+config.local.json
 
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Vim/Editor temp
+*.swp
+*.swo
+*.tmp
+*.log
+
+# Local runtime data
+/data
+data/
+
+# Your gptree artifacts
 .gptree_config
 gptree_output.txt
+
+# Ignore ignore-files themselves (необязательно, но можно)
+.gitignore
+.dockerignore
