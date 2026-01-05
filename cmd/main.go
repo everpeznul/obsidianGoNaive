@@ -12,7 +12,6 @@ import (
 	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
 	"obsidianGoNaive/internal/use_case"
 	"os"
-	"path/filepath"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -47,19 +46,20 @@ func main() {
 	domain.SetLog(base.With("package", "domain"))
 
 	// получение конфигов
-	wd, err := os.Getwd()
+	/*wd, err := os.Getwd()
 	if err != nil {
 
 		obsiLog.Error("Getwd ERROR", "error", err)
 		panic(nil)
 	}
-	cfgPathRel := "/configs/config.yaml"
-	cfgPath := filepath.Clean(filepath.Join(wd, cfgPathRel))
-	cfg, err := config.Load(cfgPath)
-	if err != nil {
+		cfgPathRel := "/configs/config.yaml"
+		cfgPath := filepath.Clean(filepath.Join(wd, cfgPathRel))
+		cfg, err := config.Load(cfgPath)
+		if err != nil {
 
-		obsiLog.Error("config.Load ERROR", "error", err)
-	}
+			obsiLog.Error("config.Load ERROR", "error", err)
+		}*/
+	cfg := config.LoadDBFromEnv()
 
 	// подключение к базе данных
 	db, err := createDatabaseConnection(cfg.DB)

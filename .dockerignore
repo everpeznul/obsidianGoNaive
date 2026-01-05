@@ -1,0 +1,8 @@
+.gitignore
+
+coverage.out
+
+/data
+
+.gptree_config
+gptree_output.txt

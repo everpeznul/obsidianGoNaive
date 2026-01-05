@@ -1,0 +1,56 @@
+services:
+  database:
+      image: postgres:16-alpine
+      container_name: database
+      environment:
+        POSTGRES_HOST: database
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: mypass
+        POSTGRES_DB: postgres
+        POSTGRES_SSLMODE: disable
+      volumes:
+      - obsi_go:/var/lib/postgresql/data
+      - type: bind
+        source: ./data
+        target: /docker-entrypoint-initdb.d
+        read_only: true
+
+      restart: always
+      networks:
+        - obsi_go_net
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+        interval: 5s
+        timeout: 15s
+  backend:
+      build: .
+      container_name: backend
+      environment:
+        POSTGRES_HOST: database
+        POSTGRES_PORT: 5432
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: mypass
+        POSTGRES_DB: postgres
+        POSTGRES_SSLMODE: disable
+      networks:
+        - obsi_go_net
+      healthcheck:
+        test: ["CMD", "curl", "localhost:8080/"]
+        interval: 5s
+        timeout: 15s
+        retries: 5
+      ports:
+        - 8080:8080
+      depends_on:
+        database:
+          condition: service_healthy
+
+networks:
+  obsi_go_net:
+    name: obsi_go_net
+    driver: bridge
+
+volumes:
+  obsi_go:
+    name: obsi_go

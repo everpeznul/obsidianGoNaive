@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -31,4 +33,44 @@ func (c Config) Validate() error {
 	}
 
 	return nil
+}
+
+func LoadDBFromEnv() Config {
+	return Config{DBConfig{
+		Host:     getEnv("POSTGRES_HOST"),
+		Port:     getEnvInt("POSTGRES_PORT"),
+		User:     getEnv("POSTGRES_USER"),
+		Password: getEnv("POSTGRES_PASSWORD"),
+		DBName:   getEnv("POSTGRES_DB"),
+		SSLMode:  getEnv("POSTGRES_SSLMODE"),
+	}}
+}
+
+func getEnv(k string) string {
+	if v := os.Getenv(k); v != "" {
+		return v
+	}
+	return ""
+}
+func getEnvInt(k string) int {
+	v := os.Getenv(k)
+	if v == "" {
+		return 0
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return 0
+	}
+	return n
+}
+func getEnvDur(k string, def time.Duration) time.Duration {
+	v := os.Getenv(k)
+	if v == "" {
+		return def
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return def
+	}
+	return d
 }
