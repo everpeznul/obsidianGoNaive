@@ -24,7 +24,7 @@ services:
         interval: 5s
         timeout: 15s
   backend:
-      build: .
+      build: ..
       container_name: backend
       environment:
         POSTGRES_HOST: database

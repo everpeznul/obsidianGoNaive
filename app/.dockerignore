@@ -5,7 +5,7 @@
 # IDE
 .vscode
 .vscode/
-.idea
+../.idea
 .idea/
 
 # Node/build artifacts (на всякий случай)

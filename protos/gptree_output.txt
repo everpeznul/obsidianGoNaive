@@ -1,0 +1,216 @@
+# Project Directory Structure:
+.
+├── .gptree_config
+├── gen/
+├── go.mod
+├── go.sum
+└── proto/
+    ├── gateway/
+    ├── notes/
+    │   └── notes.proto
+    ├── sso/
+    │   └── sso.proto
+    └── updater/
+        └── updater.proto
+
+# BEGIN FILE CONTENTS
+
+# File: proto/notes/notes.proto
+
+syntax = "proto3";
+
+package notes;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+service Notes {
+  rpc Create (CreateRequest) returns (CreateResponse) {
+    option (google.api.http) = {
+      post: "/notes"
+      body: "note"
+    };
+  };
+  rpc GetByID (GetByIdRequest) returns (GetByIdResponse) {
+    option (google.api.http) = {
+      get: "/notes/{id}"
+    };
+  };
+  rpc Find (FindRequest) returns (FindResponse) {
+    option (google.api.http) = {
+      get: "/notes"
+    };
+  };
+  rpc UpdateById (UpdateByIdRequest) returns (UpdateByIdResponse) {};
+  rpc DeleteById (DeleteByIdRequest) returns (DeleteByIdResponse) {
+    option (google.api.http) = {
+      delete: "/notes/{id}"
+    };
+  };
+}
+
+message Note {
+  string id = 1;
+  string title = 2;
+  string path = 3;
+  string class = 4;
+  repeated string tags = 5;
+  repeated string links = 6;
+  string content = 7;
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+}
+
+message CreateRequest {
+  Note note = 1;
+}
+message CreateResponse {
+  Note note = 1;
+}
+
+message GetByIdRequest {
+  string id = 1;
+}
+message GetByIdResponse {
+  Note note = 1;
+}
+
+message GetAllRequest {}
+message GetAllResponse {
+  repeated Note notes = 1;
+}
+
+message UpdateByIdRequest {
+  Note note = 1;
+}
+message UpdateByIdResponse {}
+
+message DeleteByIdRequest {
+  string id = 1;
+}
+message DeleteByIdResponse {}
+
+message FindRequest {
+  string name = 1; // /notes&name=
+  string ancestor = 2; // /notes&ancestor=
+  int64 limit = 3; //
+}
+message  FindResponse {
+  Note note = 1;
+}
+
+
+# END FILE CONTENTS
+
+
+# File: .gptree_config
+
+# GPTree Local Config
+version: 3
+
+# Whether to use .gitignore
+useGitIgnore: true
+# File types to include (e.g., .py,.js) - use * for all types
+includeFileTypes: *
+# File types to exclude (e.g., .log,.tmp)
+excludeFileTypes: 
+# Advanced: Glob patterns to include (e.g., src/**/*.py,**/*.js) - overrides includeFileTypes if specified
+includePatterns: 
+# Advanced: Glob patterns to exclude (e.g., **/tests/**,**/*.log) - combined with excludeFileTypes
+excludePatterns: 
+# Output file name
+outputFile: gptree_output.txt
+# Whether to output the file locally or relative to the project directory
+outputFileLocally: true
+# Whether to copy the output to the clipboard
+copyToClipboard: false
+# Whether to use safe mode (prevent overly large files from being combined)
+safeMode: true
+# Whether to store the files chosen in the config file (--save, -s)
+storeFilesChosen: true
+# Whether to include line numbers in the output (--line-numbers, -n)
+lineNumbers: false
+# Whether to show ignored files in the directory tree
+showIgnoredInTree: false
+# Whether to show only default ignored files in the directory tree while still respecting gitignore
+showDefaultIgnoredInTree: false
+# Previously selected files (when using the -s or --save flag previously)
+previousFiles: 
+
+
+# END FILE CONTENTS
+
+
+# File: proto/updater/updater.proto
+
+syntax = "proto3";
+
+package updater;
+
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+
+service Updater {
+  rpc Update (UpdateRequest) returns (UpdateResponse) {
+    option (google.api.http) = {
+      put: "/notes/{id}"
+    };
+  };
+}
+
+message Note {
+  string id = 1;
+  string title = 2;
+  string path = 3;
+  string class = 4;
+  repeated string tags = 5;
+  repeated string links = 6;
+  string content = 7;
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+}
+
+message UpdateRequest {
+  Note note = 1;
+}
+message UpdateResponse {
+  Note note = 1;
+}
+
+# END FILE CONTENTS
+
+
+# File: go.mod
+
+module obsidianGoNaive/protos
+
+go 1.24.0
+
+toolchain go1.24.11
+
+require (
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
+)
+
+
+# END FILE CONTENTS
+
+
+# File: go.sum
+
+google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0 h1:6Al3kEFFP9VJhRz3DID6quisgPnTeZVr4lep9kkxdPA=
+google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.6.0/go.mod h1:QLvsjh0OIR0TYBeiu2bkWGTJBUNQ64st52iWj/yA93I=
+google.golang.org/protobuf v1.36.11 h1:fV6ZwhNocDyBLK0dj+fg8ektcVegBBuEolpbTQyBNVE=
+google.golang.org/protobuf v1.36.11/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+
+
+# END FILE CONTENTS
+
+
+# File: proto/sso/sso.proto
+
+
+
+# END FILE CONTENTS
