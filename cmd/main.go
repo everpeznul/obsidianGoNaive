@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"obsidianGoNaive/internal/config"
-	"obsidianGoNaive/internal/domain"
-	"obsidianGoNaive/internal/infrastructure/database"
 	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
-	"obsidianGoNaive/internal/use_case"
+	config2 "obsidianGoNaive/protos/config"
+	"obsidianGoNaive/protos/gen/go/notes/database"
+	domain2 "obsidianGoNaive/protos/gen/go/notes/domain"
+	use_case2 "obsidianGoNaive/protos/gen/go/updater/use_case"
 	"os"
 	"time"
 
@@ -20,7 +20,7 @@ import (
 var base = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 var obsiLog = base.With("package", "main")
 
-func createDatabaseConnection(DB config.DBConfig) (*sql.DB, error) {
+func createDatabaseConnection(DB config2.DBConfig) (*sql.DB, error) {
 
 	// подключение к базе данных
 	connStr := DB.DSN()
@@ -41,9 +41,9 @@ func createDatabaseConnection(DB config.DBConfig) (*sql.DB, error) {
 func main() {
 
 	// инициализация логеров в пакетах
-	use_case.SetLog(base.With("package", "use_case"))
+	use_case2.SetLog(base.With("package", "use_case"))
 	obsiHttp.SetLog(base.With("package", "http"))
-	domain.SetLog(base.With("package", "domain"))
+	domain2.SetLog(base.With("package", "domain"))
 
 	// получение конфигов
 	/*wd, err := os.Getwd()
@@ -59,7 +59,7 @@ func main() {
 
 			obsiLog.Error("config.Load ERROR", "error", err)
 		}*/
-	cfg := config.LoadDBFromEnv()
+	cfg := config2.LoadDBFromEnv()
 
 	// подключение к базе данных
 	db, err := createDatabaseConnection(cfg.DB)
@@ -72,8 +72,8 @@ func main() {
 
 	// создание и инициализация репозитория и помошников
 	repo := &database.PgDB{DB: db}
-	domain.InitRepo(repo)
-	use_case.InitUpdater(repo)
+	domain2.InitRepo(repo)
+	use_case2.InitUpdater(repo)
 
 	// создание сервера
 	mux := http.NewServeMux()

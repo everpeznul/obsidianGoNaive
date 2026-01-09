@@ -19,7 +19,7 @@ dist/
 
 # Local data
 /db
-/data
+/protos/data
 
 # Env / local config
 .env
@@ -42,5 +42,5 @@ ehthumbs.db
 Thumbs.db
 
 # Tooling artifacts
-.gptree_config
+app/.gptree_config
 gptree_output.txt

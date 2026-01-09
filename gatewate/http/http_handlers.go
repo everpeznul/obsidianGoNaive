@@ -3,8 +3,8 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"obsidianGoNaive/internal/domain"
-	"obsidianGoNaive/internal/use_case"
+	"obsidianGoNaive/protos/gen/go/notes/domain"
+	"obsidianGoNaive/protos/gen/go/updater/use_case"
 
 	"github.com/google/uuid"
 )

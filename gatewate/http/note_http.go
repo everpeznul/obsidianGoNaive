@@ -1,7 +1,7 @@
 package http
 
 import (
-	"obsidianGoNaive/internal/domain"
+	"obsidianGoNaive/protos/gen/go/notes/domain"
 	"time"
 
 	"github.com/google/uuid"

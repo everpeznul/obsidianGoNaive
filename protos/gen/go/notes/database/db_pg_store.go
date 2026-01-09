@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"obsidianGoNaive/internal/domain"
+	"obsidianGoNaive/protos/gen/go/notes/domain"
 
 	"github.com/google/uuid"
 )

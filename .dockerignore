@@ -36,11 +36,11 @@ ehthumbs.db
 *.log
 
 # Local runtime data
-/data
-data/
+/protos/data
+../protos/data/
 
 # Your gptree artifacts
-.gptree_config
+app/.gptree_config
 gptree_output.txt
 
 # Ignore ignore-files themselves (необязательно, но можно)

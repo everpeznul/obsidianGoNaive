@@ -3,8 +3,8 @@ package use_case
 import (
 	"context"
 	"fmt"
-	"obsidianGoNaive/internal/domain"
 	"obsidianGoNaive/internal/infrastructure/database"
+	domain2 "obsidianGoNaive/protos/gen/go/notes/domain"
 )
 
 var Updtr Updater
@@ -15,14 +15,14 @@ func InitUpdater(repo *database.PgDB) {
 }
 
 type Updater struct {
-	Repo domain.NoteRepository
+	Repo domain2.NoteRepository
 	Linker
 	Tager
 }
 
-func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
+func (u *Updater) Update(ctx context.Context, oldNote domain2.Note) error {
 
-	note := domain.ReturnTypesNote(oldNote)
+	note := domain2.ReturnTypesNote(oldNote)
 	obsiLog.Debug("Update ReturnTypesNote", fmt.Sprintf("%T", note))
 
 	links, err := u.Linker.Format(ctx, note)
@@ -39,7 +39,7 @@ func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 		return fmt.Errorf("update tags note ERROR: %w", err)
 	}
 
-	newNote := &domain.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
+	newNote := &domain2.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 
 	err = u.Repo.UpdateById(ctx, *newNote)
 	if err != nil {
@@ -52,5 +52,5 @@ func (u *Updater) Update(ctx context.Context, oldNote domain.Note) error {
 	return nil
 }
 
-func (u *Updater) Update_all(note domain.Note) {
+func (u *Updater) Update_all(note domain2.Note) {
 }

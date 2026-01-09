@@ -79,5 +79,5 @@ message FindRequest {
   int64 limit = 3; //
 }
 message  FindResponse {
-  Note note = 1;
+  repeated Note note = 1;
 }

@@ -15,7 +15,6 @@ service Updater {
   };
 }
 
-
 message Note {
   string id = 1;
   string title = 2;
