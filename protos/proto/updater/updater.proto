@@ -30,6 +30,4 @@ message Note {
 message UpdateRequest {
   Note note = 1;
 }
-message UpdateResponse {
-  Note note = 1;
-}
+message UpdateResponse {}

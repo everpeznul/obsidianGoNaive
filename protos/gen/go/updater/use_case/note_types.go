@@ -1,4 +1,4 @@
-package domain
+package use_case
 
 import (
 	"context"

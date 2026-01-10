@@ -3,24 +3,23 @@ package use_case
 import (
 	"context"
 	"fmt"
-	"obsidianGoNaive/internal/infrastructure/database"
+	pbn "obsidianGoNaive/protos/gen/go/notes"
 	domain2 "obsidianGoNaive/protos/gen/go/notes/domain"
+	pbu "obsidianGoNaive/protos/gen/go/updater"
+
+	"github.com/google/uuid"
 )
 
-var Updtr Updater
-
-func InitUpdater(repo *database.PgDB) {
-
-	Updtr = Updater{repo, Linker{}, Tager{}}
-}
-
-type Updater struct {
-	Repo domain2.NoteRepository
+type UpdaterService struct {
+	pbu.UnimplementedUpdaterServer
+	pbn
 	Linker
 	Tager
 }
 
-func (u *Updater) Update(ctx context.Context, oldNote domain2.Note) error {
+func (us *UpdaterService) Update(ctx context.Context, r *pb.UpdateRequest) (*pb.UpdateResponse, error) {
+
+	note, _ := ProtoToNote(r.Note)
 
 	note := domain2.ReturnTypesNote(oldNote)
 	obsiLog.Debug("Update ReturnTypesNote", fmt.Sprintf("%T", note))
@@ -41,6 +40,7 @@ func (u *Updater) Update(ctx context.Context, oldNote domain2.Note) error {
 
 	newNote := &domain2.Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 
+	// client.notes.Update() что-нибудь такое сделать
 	err = u.Repo.UpdateById(ctx, *newNote)
 	if err != nil {
 
@@ -52,5 +52,21 @@ func (u *Updater) Update(ctx context.Context, oldNote domain2.Note) error {
 	return nil
 }
 
-func (u *Updater) Update_all(note domain2.Note) {
+func ProtoToNote(protoNote *pb.Note) (Note, error) {
+	id, err := uuid.Parse(protoNote.Id)
+	if err != nil {
+		return Note{}, fmt.Errorf("invalid UUID: %w", err)
+	}
+
+	return Note{
+		Id:         id,
+		Title:      protoNote.Title,
+		Path:       protoNote.Path,
+		Class:      protoNote.Class,
+		Tags:       protoNote.Tags,
+		Links:      protoNote.Links,
+		Content:    protoNote.Content,
+		CreateTime: protoNote.CreateTime.AsTime(),
+		UpdateTime: protoNote.UpdateTime.AsTime(),
+	}, nil
 }
