@@ -2,86 +2,58 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log/slog"
 	"net/http"
-	obsiHttp "obsidianGoNaive/internal/infrastructure/http"
-	config2 "obsidianGoNaive/protos/config"
-	"obsidianGoNaive/protos/gen/go/notes/database"
-	domain2 "obsidianGoNaive/protos/gen/go/notes/domain"
-	use_case2 "obsidianGoNaive/protos/gen/go/updater/use_case"
+	pbn "obsidianGoNaive/protos/gen/notes"
+	pbu "obsidianGoNaive/protos/gen/updater"
 	"os"
 	"time"
 
-	_ "github.com/lib/pq"
+	obsiHttp "obsidianGoNaive/gatewate/http"
+
+	"google.golang.org/grpc"
 )
 
 var base = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-var obsiLog = base.With("package", "main")
+var obsiLog = base.With("package", "main gateway")
 
-func createDatabaseConnection(DB config2.DBConfig) (*sql.DB, error) {
-
-	// подключение к базе данных
-	connStr := DB.DSN()
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка открытия соединения: %w", err)
-	}
-
-	// проверка связи с базой данных
-	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("ошибка ping базы данных: %w", err)
-	}
-
-	obsiLog.Info("Successful connect to database")
-	return db, nil
+type HTTPServer struct {
+	notesClient   pbn.NotesClient
+	updaterClient pbu.UpdaterClient
 }
 
 func main() {
 
-	// инициализация логеров в пакетах
-	use_case2.SetLog(base.With("package", "use_case"))
-	obsiHttp.SetLog(base.With("package", "http"))
-	domain2.SetLog(base.With("package", "domain"))
+	var httpLog = base.With("package", "http")
+	obsiHttp.SetLog(httpLog)
 
-	// получение конфигов
-	/*wd, err := os.Getwd()
-	if err != nil {
-
-		obsiLog.Error("Getwd ERROR", "error", err)
-		panic(nil)
+	// Получаем адреса из переменных окружения
+	notesAddr := os.Getenv("NOTES_ADDR")
+	if notesAddr == "" {
+		notesAddr = "localhost:9001" // для локального запуска
 	}
-		cfgPathRel := "/configs/config.yaml"
-		cfgPath := filepath.Clean(filepath.Join(wd, cfgPathRel))
-		cfg, err := config.Load(cfgPath)
-		if err != nil {
 
-			obsiLog.Error("config.Load ERROR", "error", err)
-		}*/
-	cfg := config2.LoadDBFromEnv()
-
-	// подключение к базе данных
-	db, err := createDatabaseConnection(cfg.DB)
-	if err != nil {
-
-		obsiLog.Error("cannot connect to database", "error", err)
-		panic(nil)
+	updaterAddr := os.Getenv("UPDATER_ADDR")
+	if updaterAddr == "" {
+		updaterAddr = "localhost:9002"
 	}
-	defer db.Close()
 
-	// создание и инициализация репозитория и помошников
-	repo := &database.PgDB{DB: db}
-	domain2.InitRepo(repo)
-	use_case2.InitUpdater(repo)
+	notesConn, _ := grpc.NewClient(notesAddr, grpc.WithInsecure())
+	notesClient := pbn.NewNotesClient(notesConn)
+	updaterConn, _ := grpc.NewClient(updaterAddr, grpc.WithInsecure())
+	updaterClient := pbu.NewUpdaterClient(updaterConn)
+
+	// server := &HTTPServer{notesClient, updaterClient}
+
+	gateway := obsiHttp.NewGateway(notesClient, updaterClient)
 
 	// создание сервера
 	mux := http.NewServeMux()
 	//http.HandleFunc("/", obsiHttp.HomeHandler)
 	fs := http.FileServer(http.Dir("./web"))
 	mux.Handle("/", fs)
-	mux.HandleFunc("/notes/{id}", obsiHttp.NotesUUIDHandler)
-	mux.HandleFunc("/notes", obsiHttp.NotesHandler)
+	mux.HandleFunc("/notes/{id}", gateway.NotesUUIDHandler)
+	mux.HandleFunc("/notes", gateway.NotesHandler)
 	handler := obsiHttp.TimeoutMiddleware(
 		obsiHttp.JsonMiddleware(
 			mux))

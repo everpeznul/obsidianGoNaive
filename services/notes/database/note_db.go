@@ -1,7 +1,7 @@
 package database
 
 import (
-	"obsidianGoNaive/protos/gen/go/notes/domain"
+	"obsidianGoNaive/services/notes/domain"
 	"strings"
 	"time"
 

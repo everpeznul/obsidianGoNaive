@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package updater;
 
-option go_package = "obsidianGoNaive/protos/gen/go/updater";
+option go_package = "obsidianGoNaive/protos/gen/updater";
 
-import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "common/common.proto";
 
 service Updater {
   rpc Update (UpdateRequest) returns (UpdateResponse) {
@@ -15,21 +15,7 @@ service Updater {
   };
 }
 
-message Note {
-  string id = 1;
-  string title = 2;
-  string path = 3;
-  string class = 4;
-  repeated string tags = 5;
-  repeated string links = 6;
-  string content = 7;
-  google.protobuf.Timestamp create_time = 8;
-  google.protobuf.Timestamp update_time = 9;
-}
-
 message UpdateRequest {
-  Note note = 1;
+  common.Note note = 1;
 }
-message UpdateResponse {
-  Note note = 1;
-}
+message UpdateResponse {}

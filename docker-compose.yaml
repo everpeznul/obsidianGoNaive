@@ -1,50 +1,67 @@
 services:
   database:
-      image: postgres:16-alpine
-      container_name: database
-      environment:
-        POSTGRES_HOST: database
-        POSTGRES_PORT: 5432
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: mypass
-        POSTGRES_DB: postgres
-        POSTGRES_SSLMODE: disable
-      volumes:
+    image: postgres:16-alpine
+    container_name: database
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: postgres
+    volumes:
       - obsi_go:/var/lib/postgresql/data
-      - type: bind
-        source: ./data
-        target: /docker-entrypoint-initdb.d
-        read_only: true
+      - ./data:/docker-entrypoint-initdb.d:ro
+    restart: always
+    networks:
+      - obsi_go_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-      restart: always
-      networks:
-        - obsi_go_net
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-        interval: 5s
-        timeout: 15s
-  backend:
-      build: ..
-      container_name: backend
-      environment:
-        POSTGRES_HOST: database
-        POSTGRES_PORT: 5432
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: mypass
-        POSTGRES_DB: postgres
-        POSTGRES_SSLMODE: disable
-      networks:
-        - obsi_go_net
-      healthcheck:
-        test: ["CMD", "curl", "localhost:8080/"]
-        interval: 5s
-        timeout: 15s
-        retries: 5
-      ports:
-        - 8080:8080
-      depends_on:
-        database:
-          condition: service_healthy
+  notes:
+    build:
+      context: .
+      dockerfile: Dockerfile.notes
+    container_name: notes
+    environment:
+      POSTGRES_HOST: database
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mypass
+      POSTGRES_DB: postgres
+      POSTGRES_SSLMODE: disable
+    networks:
+      - obsi_go_net
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: always
+
+  updater:
+    build:
+      context: .
+      dockerfile: Dockerfile.updater
+    container_name: updater
+    environment:
+      NOTES_ADDR: notes:9001
+    networks:
+      - obsi_go_net
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: gateway
+    environment:
+      NOTES_ADDR: notes:9001
+      UPDATER_ADDR: updater:9002
+    ports:
+      - "8080:8080"
+    networks:
+      - obsi_go_net
+    depends_on:
+      - notes
+      - updater
 
 networks:
   obsi_go_net:

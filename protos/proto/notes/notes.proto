@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package notes;
 
-option go_package = "obsidianGoNaive/protos/gen/go/notes";
+option go_package = "obsidianGoNaive/protos/gen/notes";
 
-import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
+import "common/common.proto";
 
 service Notes {
   rpc Create (CreateRequest) returns (CreateResponse) {
@@ -32,39 +32,27 @@ service Notes {
   };
 }
 
-message Note {
-  string id = 1;
-  string title = 2;
-  string path = 3;
-  string class = 4;
-  repeated string tags = 5;
-  repeated string links = 6;
-  string content = 7;
-  google.protobuf.Timestamp create_time = 8;
-  google.protobuf.Timestamp update_time = 9;
-}
-
 message CreateRequest {
-  Note note = 1;
+  common.Note note = 1;
 }
 message CreateResponse {
-  Note note = 1;
+  common.Note note = 1;
 }
 
 message GetByIdRequest {
   string id = 1;
 }
 message GetByIdResponse {
-  Note note = 1;
+  common.Note note = 1;
 }
 
 message GetAllRequest {}
 message GetAllResponse {
-  repeated Note notes = 1;
+  repeated common.Note notes = 1;
 }
 
 message UpdateByIdRequest {
-  Note note = 1;
+  common.Note note = 1;
 }
 message UpdateByIdResponse {}
 
@@ -79,5 +67,5 @@ message FindRequest {
   int64 limit = 3; //
 }
 message  FindResponse {
-  repeated Note note = 1;
+  repeated common.Note note = 1;
 }

@@ -4,7 +4,7 @@ import "context"
 
 type Tager struct{}
 
-func (t *Tager) Format(ctx context.Context, n Noter) ([]string, error) {
+func (upd *UpdaterService) TagsFormat(ctx context.Context, n Noter) ([]string, error) {
 
 	return []string{"tempTag"}, nil
 }

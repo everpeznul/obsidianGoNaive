@@ -36,7 +36,7 @@ ehthumbs.db
 *.log
 
 # Local runtime data
-/protos/data
+/services/data
 ../protos/data/
 
 # Your gptree artifacts

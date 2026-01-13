@@ -3,14 +3,14 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	"obsidianGoNaive/protos/gen/go/notes/domain"
-	"obsidianGoNaive/protos/gen/go/updater/use_case"
+	pbn "obsidianGoNaive/protos/gen/notes"
+	pbu "obsidianGoNaive/protos/gen/updater"
 
 	"github.com/google/uuid"
 )
 
 // HomeHandler handle home request /
-func HomeHandler(w http.ResponseWriter, r *http.Request) {
+func (gtw *Gateway) HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	obsiLog.Debug("Home handler")
 	_, err := w.Write([]byte("Home page"))
@@ -23,7 +23,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // NotesUUIDHandler handle notes with id request /notes/{id}
-func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
+func (gtw *Gateway) NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -40,14 +40,14 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodGet:
 
-		note, err := domain.Repo.GetByID(ctx, id)
+		note, err := gtw.notesClient.GetByID(ctx, &pbn.GetByIdRequest{Id: id.String()})
 		if writeError(w, err) {
 			return
 		}
 
 		obsiLog.Debug("NotesUUIDHandler GET", "note", note)
 
-		data, err := json.Marshal(nm.DomainToHTTP(note))
+		data, err := json.Marshal(note.Note)
 		if err != nil {
 
 			obsiLog.Error("NotesUUIDHandler ERROR", "error", err)
@@ -79,18 +79,19 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 		obsiLog.Debug("NotesUUIDHandler PUT", "httpNote", note)
 
-		domainNote := nm.HTTPToDomain(note)
-		if id != domainNote.Id {
+		protoNote := nm.HTTPToProto(note)
+		pId, _ := uuid.Parse(protoNote.Id)
+		if id != pId {
 
-			obsiLog.Error("NotesUUIDHandler PUT Error", "error", "strange id", "id", id, "note id", domainNote.Id)
+			obsiLog.Error("NotesUUIDHandler PUT Error", "error", "strange id", "id", id, "note id", protoNote.Id)
 			http.Error(w, "Note id != id", http.StatusBadRequest)
 			return
 		}
-		domainNote.Id = id
+		protoNote.Id = id.String()
 
-		obsiLog.Debug("NotesUUIDHandler PUT", "domainNote", domainNote)
+		obsiLog.Debug("NotesUUIDHandler PUT", "domainNote", protoNote)
 
-		err = use_case.Updtr.Update(ctx, domainNote)
+		_, err = gtw.updaterClient.Update(ctx, &pbu.UpdateRequest{Note: &protoNote})
 		if writeError(w, err) {
 			return
 		}
@@ -102,7 +103,7 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodDelete:
 
-		err := domain.Repo.DeleteById(ctx, id)
+		_, err := gtw.notesClient.DeleteById(ctx, &pbn.DeleteByIdRequest{Id: id.String()})
 
 		if writeError(w, err) {
 			return
@@ -123,7 +124,7 @@ func NotesUUIDHandler(w http.ResponseWriter, r *http.Request) {
 
 // NotesHandler handle note with name/ancestor request /note?name&?ancestor.
 // It is not good to have both of params at one request
-func NotesHandler(w http.ResponseWriter, r *http.Request) {
+func (gtw *Gateway) NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
@@ -136,12 +137,14 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 		if len(params) == 0 {
 
-			notes, err := domain.Repo.GetAll(ctx)
+			resp, err := gtw.notesClient.Find(ctx, &pbn.FindRequest{Limit: 0})
+			notes := resp.Note
 			if writeError(w, err) {
 				return
 			}
 
-			data, err := json.Marshal(nm.DomainToHTTPSlice(notes))
+			httpNotes, _ := nm.ProtoToHTTPSlice(notes)
+			data, err := json.Marshal(httpNotes)
 			if err != nil {
 
 				obsiLog.Error("NotesHandler GET All ERROR", "error", err)
@@ -164,14 +167,15 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 			if _, exist := params["name"]; exist {
 
-				note, err := domain.Repo.FindByName(ctx, params.Get("name"))
+				resp, err := gtw.notesClient.Find(ctx, &pbn.FindRequest{Name: params.Get("name")})
+				note := resp.Note
 				if writeError(w, err) {
 					return
 				}
 
 				obsiLog.Debug("NotesHandler GET Name", "domainNote", note)
 
-				httpNote := nm.DomainToHTTP(note)
+				httpNote, _ := nm.ProtoToHTTPSlice(note)
 
 				obsiLog.Debug("NotesHandler GET Name", "httpNote", httpNote)
 
@@ -197,14 +201,15 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 			if _, exist := params["ancestor"]; exist {
 
-				notes, err := domain.Repo.FindByAncestor(ctx, params.Get("ancestor"))
+				resp, err := gtw.notesClient.Find(ctx, &pbn.FindRequest{Name: params.Get("ancestor")})
+				notes := resp.Note
 				if writeError(w, err) {
 					return
 				}
 
 				obsiLog.Debug("NotesHandler GET Ancestor", "domainNotes", notes)
 
-				httpNotes := nm.DomainToHTTPSlice(notes)
+				httpNotes, _ := nm.ProtoToHTTPSlice(notes)
 
 				obsiLog.Debug("NotesHandler GET Ancestor", "httpNotes", httpNotes)
 
@@ -259,8 +264,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 
 		obsiLog.Debug("NotesHandler POST", "httpNote", n)
 
-		note := nm.HTTPToDomain(n)
-		_, err = domain.Repo.Insert(ctx, note)
+		note := nm.HTTPToProto(n)
+		_, err = gtw.notesClient.Create(ctx, &pbn.CreateRequest{Note: &note})
 		if writeError(w, err) {
 			return
 		}

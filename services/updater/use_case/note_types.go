@@ -1,4 +1,4 @@
-package domain
+package use_case
 
 import (
 	"context"
@@ -16,9 +16,9 @@ type NotePeriodicDaily struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicDaily) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicDaily) FindFounder(ctx context.Context, upd UpdaterService) (string, error) {
 
-	ok, err := Exists(ctx, "0000-00-00")
+	ok, err := upd.Exists(ctx, "0000-00-00")
 	if !ok {
 
 		obsiLog.Error("Daily FindFounder ERROR", "error", err)
@@ -33,9 +33,9 @@ type NotePeriodicWeekly struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicWeekly) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicWeekly) FindFounder(ctx context.Context, upd UpdaterService) (string, error) {
 
-	ok, err := Exists(ctx, "0000-W00")
+	ok, err := upd.Exists(ctx, "0000-W00")
 	if !ok {
 
 		obsiLog.Error("Weekly FindFounder ERROR", "error", err)
@@ -50,9 +50,9 @@ type NotePeriodicMonthly struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicMonthly) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicMonthly) FindFounder(ctx context.Context, upd UpdaterService) (string, error) {
 
-	ok, err := Exists(ctx, "0000-00")
+	ok, err := upd.Exists(ctx, "0000-00")
 	if !ok {
 
 		obsiLog.Error("Monthly FindFounder ERROR", "error", err)
@@ -67,9 +67,9 @@ type NotePeriodicQuarterly struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicQuarterly) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicQuarterly) FindFounder(ctx context.Context, upd UpdaterService) (string, error) {
 
-	ok, err := Exists(ctx, "0000-Q0")
+	ok, err := upd.Exists(ctx, "0000-Q0")
 	if !ok {
 
 		obsiLog.Error("Quarterly FindFounder ERROR", "error", err)
@@ -84,9 +84,9 @@ type NotePeriodicYearly struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicYearly) FindFounder(ctx context.Context) (string, error) {
+func (n *NotePeriodicYearly) FindFounder(ctx context.Context, upd UpdaterService) (string, error) {
 
-	ok, err := Exists(ctx, "0000")
+	ok, err := upd.Exists(ctx, "0000")
 	if !ok {
 
 		obsiLog.Error("Yearly FindFounder ERROR", "error", err)
@@ -101,7 +101,7 @@ type NotePeriodicDream struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicDream) FindAncestor(ctx context.Context) (string, error) {
+func (n *NotePeriodicDream) FindAncestor(ctx context.Context, upd UpdaterService) (string, error) {
 
 	a := strings.Split(n.Title, ".")
 	if len(a) != 3 {
@@ -109,12 +109,12 @@ func (n *NotePeriodicDream) FindAncestor(ctx context.Context) (string, error) {
 	}
 	ancestor := a[1]
 
-	ok, err := Exists(ctx, ancestor)
+	ok, err := upd.Exists(ctx, ancestor)
 	if !ok {
 
 		obsiLog.Error("Dream FindAncestor ERROR", "error", err)
 
-		id, err := Create(ctx, ancestor)
+		id, err := upd.Create(ctx, ancestor)
 		if err != nil {
 
 			obsiLog.Error("Dream FindAncestor ERROR", "error", err)
@@ -132,7 +132,7 @@ type NotePeriodicThought struct {
 	NotePeriodic
 }
 
-func (n *NotePeriodicThought) FindAncestor(ctx context.Context) (string, error) {
+func (n *NotePeriodicThought) FindAncestor(ctx context.Context, upd UpdaterService) (string, error) {
 
 	a := strings.Split(n.Title, ".")
 	if len(a) != 3 {
@@ -140,12 +140,12 @@ func (n *NotePeriodicThought) FindAncestor(ctx context.Context) (string, error) 
 	}
 	ancestor := a[1]
 
-	ok, err := Exists(ctx, ancestor)
+	ok, err := upd.Exists(ctx, ancestor)
 	if !ok {
 
 		obsiLog.Error("Thought FindAncestor ERROR", "error", err)
 
-		id, err := Create(ctx, ancestor)
+		id, err := upd.Create(ctx, ancestor)
 		if err != nil {
 
 			obsiLog.Error("Thought FindAncestor ERROR", "error", err)

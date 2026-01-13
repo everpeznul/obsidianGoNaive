@@ -1,8 +1,6 @@
 package use_case
 
-import (
-	"log/slog"
-)
+import "log/slog"
 
 var obsiLog *slog.Logger
 

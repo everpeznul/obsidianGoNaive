@@ -18,7 +18,7 @@ type NoteRepository interface {
 
 var Repo NoteRepository
 
-func InitRepo(r NoteRepository) {
+func SetRepo(r NoteRepository) {
 
 	Repo = r
 }

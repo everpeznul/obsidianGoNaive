@@ -1,11 +1,24 @@
 package http
 
 import (
-	"obsidianGoNaive/protos/gen/go/notes/domain"
+	cmn "obsidianGoNaive/protos/gen/common"
+	pbn "obsidianGoNaive/protos/gen/notes"
+	pbu "obsidianGoNaive/protos/gen/updater"
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
+
+type Gateway struct {
+	notesClient   pbn.NotesClient
+	updaterClient pbu.UpdaterClient
+}
+
+func NewGateway(notesClient pbn.NotesClient, updaterClient pbu.UpdaterClient) *Gateway {
+
+	return &Gateway{notesClient: notesClient, updaterClient: updaterClient}
+}
 
 type httpNote struct {
 	Id         uuid.UUID `json:"id,omitempty"`
@@ -23,72 +36,65 @@ var nm = noteMapperHttp{}
 
 type noteMapperHttp struct{}
 
-func (nm *noteMapperHttp) HTTPToDomain(note httpNote) domain.Note {
-
-	return domain.Note{
-		Id:         note.Id,
+func (nm *noteMapperHttp) HTTPToProto(note httpNote) cmn.Note {
+	return cmn.Note{
+		Id:         note.Id.String(),
 		Title:      note.Title,
 		Path:       note.Path,
 		Class:      note.Class,
 		Tags:       note.Tags,
 		Links:      note.Links,
 		Content:    note.Content,
-		CreateTime: note.CreateTime,
-		UpdateTime: note.UpdateTime,
+		CreateTime: timestamppb.New(note.CreateTime),
+		UpdateTime: timestamppb.New(note.UpdateTime),
 	}
 }
 
-func (nm *noteMapperHttp) HTTPToDomainSlice(notes []httpNote) []domain.Note {
-
-	domainNotes := make([]domain.Note, 0, len(notes))
+func (nm *noteMapperHttp) HTTPToProtoSlice(notes []httpNote) []*cmn.Note {
+	commonNotes := make([]*cmn.Note, 0, len(notes))
 	for _, note := range notes {
-
-		domainNotes = append(domainNotes, domain.Note{
-			Id:         note.Id,
+		commonNotes = append(commonNotes, &cmn.Note{
+			Id:         note.Id.String(),
 			Title:      note.Title,
 			Path:       note.Path,
 			Class:      note.Class,
 			Tags:       note.Tags,
 			Links:      note.Links,
 			Content:    note.Content,
-			CreateTime: note.CreateTime,
-			UpdateTime: note.UpdateTime,
+			CreateTime: timestamppb.New(note.CreateTime),
+			UpdateTime: timestamppb.New(note.UpdateTime),
 		})
 	}
-	return domainNotes
+	return commonNotes
 }
 
-func (nm *noteMapperHttp) DomainToHTTP(note domain.Note) httpNote {
+func (nm *noteMapperHttp) ProtoToHTTP(note *cmn.Note) (httpNote, error) {
+	id, err := uuid.Parse(note.Id)
+	if err != nil {
+		return httpNote{}, err
+	}
 
 	return httpNote{
-		Id:         note.Id,
+		Id:         id,
 		Title:      note.Title,
 		Path:       note.Path,
 		Class:      note.Class,
 		Tags:       note.Tags,
 		Links:      note.Links,
 		Content:    note.Content,
-		CreateTime: note.CreateTime,
-		UpdateTime: note.UpdateTime,
-	}
+		CreateTime: note.CreateTime.AsTime(),
+		UpdateTime: note.UpdateTime.AsTime(),
+	}, nil
 }
 
-func (nm *noteMapperHttp) DomainToHTTPSlice(notes []domain.Note) []httpNote {
-
+func (nm *noteMapperHttp) ProtoToHTTPSlice(notes []*cmn.Note) ([]httpNote, error) {
 	httpNotes := make([]httpNote, 0, len(notes))
 	for _, note := range notes {
-
-		httpNotes = append(httpNotes, httpNote{
-			Id:         note.Id,
-			Title:      note.Title,
-			Path:       note.Path,
-			Class:      note.Class,
-			Tags:       note.Tags,
-			Links:      note.Links,
-			Content:    note.Content,
-			CreateTime: note.CreateTime,
-			UpdateTime: note.UpdateTime,
-		})
+		hn, err := nm.ProtoToHTTP(note)
+		if err != nil {
+			return nil, err
+		}
+		httpNotes = append(httpNotes, hn)
 	}
-	return httpNotes
+	return httpNotes, nil
 }

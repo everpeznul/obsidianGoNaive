@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Notes viewer</title>
 
-    <!-- Marked.js для парсинга Markdown -->
+    <!-- Marked.js для Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- Highlight.js для подсветки кода -->
@@ -68,8 +68,6 @@
         #error:not(:empty) {
             display: block;
         }
-
-        /* Стили для Markdown */
         #content h1 {
             border-bottom: 2px solid #eee;
             padding-bottom: 8px;
@@ -119,8 +117,7 @@
             width: 100%;
             margin: 16px 0;
         }
-        #content table th,
-        #content table td {
+        #content table th, #content table td {
             border: 1px solid #ddd;
             padding: 8px 12px;
             text-align: left;
@@ -147,7 +144,6 @@
         #content p {
             margin: 12px 0;
         }
-
         .toggle-container {
             margin-top: 12px;
         }
@@ -161,7 +157,6 @@
         .toggle-label input {
             cursor: pointer;
         }
-
         .debug-info {
             margin-top: 16px;
             padding: 12px;
@@ -186,18 +181,17 @@
         <option value="name">По name</option>
         <option value="id">По id</option>
     </select>
-
-    <input id="q" size="40" placeholder="например: мысль.что-то или UUID" />
+    <input id="q" size="40" placeholder="Название или UUID">
     <button id="load">Загрузить</button>
 </div>
 
 <div class="toggle-container">
     <label class="toggle-label">
-        <input type="checkbox" id="renderMarkdown" checked />
+        <input type="checkbox" id="renderMarkdown" checked>
         <span>Рендерить Markdown</span>
     </label>
-    <label class="toggle-label" style="margin-left: 16px;">
-        <input type="checkbox" id="showDebug" />
+    <label class="toggle-label" style="margin-left: 16px">
+        <input type="checkbox" id="showDebug">
         <span>Показать отладку</span>
     </label>
 </div>
@@ -235,58 +229,53 @@
     });
 
     function setError(msg) {
-        errEl.textContent = msg || '';
+        errEl.textContent = msg;
     }
 
     function setMeta(note) {
-        const name = note?.name ? `name: ${note.name}` : '';
-        const id = note?.id ? `id: ${note.id}` : '';
-        metaEl.textContent = [name, id].filter(Boolean).join(' | ');
+        const name = note?.name ? `name: ${note.name}` : "";
+        const id = note?.id ? `id: ${note.id}` : "";
+        metaEl.textContent = [name, id].filter(Boolean).join(" | ");
     }
 
     function updateDebugInfo(content) {
         if (!content) {
-            debugInfoEl.textContent = 'Нет контента для отладки';
+            debugInfoEl.textContent = "";
             return;
         }
-
         const lines = content.split('\n');
         const info = [
             `Длина: ${content.length} символов`,
             `Строк: ${lines.length}`,
-            `Первые 200 символов:\n${content.substring(0, 200)}`,
-            `\nПоследние 100 символов:\n${content.substring(Math.max(0, content.length - 100))}`
+            `Первые 200 символов: ${content.substring(0, 200)}`,
+            `Последние 100 символов: ${content.substring(Math.max(0, content.length - 100))}`
         ];
-
-        debugInfoEl.textContent = info.join('\n');
+        debugInfoEl.textContent = info.join('\n\n');
     }
 
     function displayContent(content) {
         if (!content) {
-            contentEl.innerHTML = '<em style="color: #999;">Нет содержимого</em>';
-            updateDebugInfo('');
+            contentEl.innerHTML = '<em style="color: #999">Нет содержимого</em>';
+            updateDebugInfo("");
             return;
         }
 
-        // Обновляем отладочную информацию
         updateDebugInfo(content);
 
         if (renderMarkdownEl.checked) {
             // Рендерим Markdown
             try {
                 contentEl.innerHTML = marked.parse(content);
-                // Применяем подсветку синтаксиса ко всем блокам кода
                 contentEl.querySelectorAll('pre code').forEach((block) => {
                     hljs.highlightElement(block);
                 });
             } catch (e) {
-                console.error('Ошибка парсинга Markdown:', e);
-                // Fallback на обычный текст при ошибке
-                contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">${escapeHtml(content)}</pre>`;
+                console.error("Ошибка рендеринга Markdown:", e);
+                // Fallback на обычный текст
+                contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0">${escapeHtml(content)}</pre>`;
             }
         } else {
-            // Показываем как обычный текст с сохранением переносов
-            contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0;">${escapeHtml(content)}</pre>`;
+            contentEl.innerHTML = `<pre style="white-space: pre-wrap; word-break: break-word; margin: 0">${escapeHtml(content)}</pre>`;
         }
     }
 
@@ -297,59 +286,73 @@
     }
 
     async function loadNote() {
-        setError('');
-        metaEl.textContent = '';
-        contentEl.innerHTML = '';
-        debugInfoEl.textContent = '';
+        setError("");
+        metaEl.textContent = "";
+        contentEl.innerHTML = "";
+        debugInfoEl.textContent = "";
         currentNote = null;
 
         const mode = modeEl.value;
         const q = qEl.value.trim();
 
         if (!q) {
-            setError('Пустой запрос');
+            setError("Введите запрос");
             return;
         }
 
-        const url = mode === 'id'
+        const url = mode === "id"
             ? `/notes/${encodeURIComponent(q)}`
             : `/notes?name=${encodeURIComponent(q)}`;
 
         try {
             const resp = await fetch(url);
+
             if (!resp.ok) {
-                const text = await resp.text().catch(() => '');
-                throw new Error(`${resp.status} ${resp.statusText}${text ? ` — ${text}` : ''}`);
+                const text = await resp.text().catch(() => "");
+                throw new Error(`${resp.status} ${resp.statusText}${text ? ": " + text : ""}`);
             }
 
-            const note = await resp.json();
-            currentNote = note;
+            const data = await resp.json();
 
-            console.log('Полученная заметка:', note);
-            console.log('Контент:', note?.content);
-            console.log('Длина контента:', note?.content?.length);
+            // ИСПРАВЛЕНИЕ: проверяем, массив или объект
+            let note;
+            if (Array.isArray(data)) {
+                if (data.length === 0) {
+                    setError("Заметка не найдена");
+                    return;
+                }
+                note = data[0]; // берем первую заметку из массива
+                console.log("📦 Получен массив, заметок:", data.length);
+            } else {
+                note = data;
+            }
+
+            currentNote = note;
+            console.log("📝 Заметка:", note);
+            console.log("📄 Контент:", note?.content);
+            console.log("📏 Длина:", note?.content?.length);
 
             setMeta(note);
-            displayContent(note?.content ?? '');
+            displayContent(note?.content ?? "");
+
         } catch (e) {
             setError(String(e.message || e));
-            console.error('Ошибка загрузки:', e);
+            console.error("❌ Ошибка:", e);
         }
     }
 
     btn.addEventListener('click', loadNote);
+
     qEl.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') loadNote();
     });
 
-    // Переключение режима отображения
     renderMarkdownEl.addEventListener('change', () => {
         if (currentNote && currentNote.content) {
             displayContent(currentNote.content);
         }
     });
 
-    // Переключение отладочной информации
     showDebugEl.addEventListener('change', () => {
         if (showDebugEl.checked) {
             debugInfoEl.classList.add('show');
