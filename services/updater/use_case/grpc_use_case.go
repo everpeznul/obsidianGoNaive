@@ -3,25 +3,25 @@ package use_case
 import (
 	"context"
 	"fmt"
-	cmn "obsidianGoNaive/protos/gen/common"
-	pbn "obsidianGoNaive/protos/gen/notes"
-	pbu "obsidianGoNaive/protos/gen/updater"
+	cmn "obsidianGoNaive/pkg/protos/gen/common"
+	"obsidianGoNaive/pkg/protos/gen/notes"
+	"obsidianGoNaive/pkg/protos/gen/updater"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type UpdaterService struct {
-	pbu.UnimplementedUpdaterServer
-	client pbn.NotesClient
+	updater.UnimplementedUpdaterServer
+	client notes.NotesClient
 }
 
-func NewUpdaterService(client pbn.NotesClient) *UpdaterService {
+func NewUpdaterService(client notes.NotesClient) *UpdaterService {
 
 	return &UpdaterService{client: client}
 }
 
-func (us *UpdaterService) Update(ctx context.Context, r *pbu.UpdateRequest) (*pbu.UpdateResponse, error) {
+func (us *UpdaterService) Update(ctx context.Context, r *updater.UpdateRequest) (*updater.UpdateResponse, error) {
 
 	oldNote, _ := ProtoToNote(r.Note)
 
@@ -32,27 +32,27 @@ func (us *UpdaterService) Update(ctx context.Context, r *pbu.UpdateRequest) (*pb
 	if err != nil {
 
 		obsiLog.Error("Update links Note ERROR", "note", oldNote, "error", err)
-		return &pbu.UpdateResponse{}, fmt.Errorf("update links note ERROR: %w", err)
+		return &updater.UpdateResponse{}, fmt.Errorf("update links note ERROR: %w", err)
 	}
 
 	tags, err := us.TagsFormat(ctx, note)
 	if err != nil {
 
 		obsiLog.Error("Update tags Note ERROR", "note", oldNote, "error", err)
-		return &pbu.UpdateResponse{}, fmt.Errorf("update tags note ERROR: %w", err)
+		return &updater.UpdateResponse{}, fmt.Errorf("update tags note ERROR: %w", err)
 	}
 
 	tempNote := Note{oldNote.Id, oldNote.Title, oldNote.Path, oldNote.Class, tags, links, oldNote.Content, oldNote.CreateTime, oldNote.UpdateTime}
 	newNote := NoteToProto(tempNote)
-	_, err = us.client.UpdateById(ctx, &pbn.UpdateByIdRequest{Note: &newNote})
+	_, err = us.client.UpdateById(ctx, &notes.UpdateByIdRequest{Note: &newNote})
 	if err != nil {
 
 		obsiLog.Error("Repo Update Note ERROR", "note", newNote, "error", err)
-		return &pbu.UpdateResponse{}, fmt.Errorf("repo update note ERROR: %w", err)
+		return &updater.UpdateResponse{}, fmt.Errorf("repo update note ERROR: %w", err)
 	}
 
 	obsiLog.Debug("Successful Note Update", "note", newNote)
-	return &pbu.UpdateResponse{}, nil
+	return &updater.UpdateResponse{}, nil
 }
 
 func ProtoToNote(protoNote *cmn.Note) (Note, error) {

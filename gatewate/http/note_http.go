@@ -1,9 +1,9 @@
 package http
 
 import (
-	cmn "obsidianGoNaive/protos/gen/common"
-	pbn "obsidianGoNaive/protos/gen/notes"
-	pbu "obsidianGoNaive/protos/gen/updater"
+	cmn "obsidianGoNaive/pkg/protos/gen/common"
+	pbn "obsidianGoNaive/pkg/protos/gen/notes"
+	pbu "obsidianGoNaive/pkg/protos/gen/updater"
 	"time"
 
 	"github.com/google/uuid"

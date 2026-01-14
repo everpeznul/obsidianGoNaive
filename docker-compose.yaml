@@ -40,7 +40,7 @@ services:
   updater:
     build:
       context: .
-      dockerfile: Dockerfile.updater
+      dockerfile: services/updater/Dockerfile.updater
     container_name: updater
     environment:
       NOTES_ADDR: notes:9001
@@ -50,7 +50,7 @@ services:
   gateway:
     build:
       context: .
-      dockerfile: Dockerfile.gateway
+      dockerfile: gatewate/Dockerfile.gateway
     container_name: gateway
     environment:
       NOTES_ADDR: notes:9001

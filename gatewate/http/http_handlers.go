@@ -3,8 +3,8 @@ package http
 import (
 	"encoding/json"
 	"net/http"
-	pbn "obsidianGoNaive/protos/gen/notes"
-	pbu "obsidianGoNaive/protos/gen/updater"
+	pbn "obsidianGoNaive/pkg/protos/gen/notes"
+	pbu "obsidianGoNaive/pkg/protos/gen/updater"
 
 	"github.com/google/uuid"
 )

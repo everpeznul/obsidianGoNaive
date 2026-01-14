@@ -2,7 +2,7 @@ package transport
 
 import (
 	"fmt"
-	"obsidianGoNaive/protos/gen/common"
+	"obsidianGoNaive/pkg/protos/gen/common"
 	"obsidianGoNaive/services/notes/internal/domain"
 
 	"github.com/google/uuid"

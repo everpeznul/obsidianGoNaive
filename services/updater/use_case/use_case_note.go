@@ -3,8 +3,8 @@ package use_case
 import (
 	"context"
 	"fmt"
-	cmn "obsidianGoNaive/protos/gen/common"
-	pbn "obsidianGoNaive/protos/gen/notes"
+	cmn "obsidianGoNaive/pkg/protos/gen/common"
+	pbn "obsidianGoNaive/pkg/protos/gen/notes"
 	"regexp"
 	"strings"
 	"time"

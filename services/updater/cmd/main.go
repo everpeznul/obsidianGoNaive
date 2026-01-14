@@ -3,8 +3,8 @@ package main
 import (
 	"log/slog"
 	"net"
-	pbn "obsidianGoNaive/protos/gen/notes"
-	pbu "obsidianGoNaive/protos/gen/updater"
+	pbn "obsidianGoNaive/pkg/protos/gen/notes"
+	pbu "obsidianGoNaive/pkg/protos/gen/updater"
 	"obsidianGoNaive/services/updater/use_case"
 	"os"
 

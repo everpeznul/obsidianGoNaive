@@ -4,8 +4,8 @@ package main
 import (
 	"log/slog"
 	"net/http"
-	pbn "obsidianGoNaive/protos/gen/notes"
-	pbu "obsidianGoNaive/protos/gen/updater"
+	pbn "obsidianGoNaive/pkg/protos/gen/notes"
+	pbu "obsidianGoNaive/pkg/protos/gen/updater"
 	"os"
 	"time"
 

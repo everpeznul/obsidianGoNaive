@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	pb "obsidianGoNaive/protos/gen/notes"
+	pb "obsidianGoNaive/pkg/protos/gen/notes"
 	"obsidianGoNaive/services/notes/internal/config"
 	"obsidianGoNaive/services/notes/internal/repository"
 	"obsidianGoNaive/services/notes/internal/repository/postgres"

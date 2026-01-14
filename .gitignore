@@ -19,7 +19,7 @@ dist/
 
 # Local data
 /db
-/services/data
+/pkg/data
 
 # Env / local config
 .env
@@ -45,7 +45,7 @@ Thumbs.db
 app/.gptree_config
 gptree_output.txt
 
-protos
+pkg/protos
 
 gptree_output.txt
 .gptree_config
