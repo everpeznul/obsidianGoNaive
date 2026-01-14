@@ -1,21 +1,22 @@
-package domain
+package transport
 
 import (
 	"fmt"
-	cmn "obsidianGoNaive/protos/gen/common"
+	"obsidianGoNaive/protos/gen/common"
+	"obsidianGoNaive/services/notes/internal/domain"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Из protobuf в доменную модель
-func ProtoToNote(protoNote *cmn.Note) (Note, error) {
+func ProtoToNote(protoNote *common.Note) (*domain.Note, error) {
 	id, err := uuid.Parse(protoNote.Id)
 	if err != nil {
-		return Note{}, fmt.Errorf("invalid UUID: %w", err)
+		return nil, fmt.Errorf("invalid UUID: %w", err)
 	}
 
-	return Note{
+	return &domain.Note{
 		Id:         id,
 		Title:      protoNote.Title,
 		Path:       protoNote.Path,
@@ -29,8 +30,8 @@ func ProtoToNote(protoNote *cmn.Note) (Note, error) {
 }
 
 // Из доменной модели в protobuf
-func NoteToProto(note Note) *cmn.Note {
-	return &cmn.Note{
+func NoteToProto(note *domain.Note) *common.Note {
+	return &common.Note{
 		Id:         note.Id.String(),
 		Title:      note.Title,
 		Path:       note.Path,
@@ -44,26 +45,26 @@ func NoteToProto(note Note) *cmn.Note {
 }
 
 // Из protobuf слайса в доменный слайс
-func ProtoToNotes(protoNotes []*cmn.Note) ([]Note, error) {
-	notes := make([]Note, 0, len(protoNotes))
+func ProtoToNotes(protoNotes []*common.Note) ([]*domain.Note, error) {
+	notes := make([]*domain.Note, len(protoNotes))
 
-	for _, protoNote := range protoNotes {
-		note, err := ProtoToNote(protoNote)
+	for i := range protoNotes {
+		note, err := ProtoToNote(protoNotes[i])
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert note: %w", err)
 		}
-		notes = append(notes, note)
+		notes[i] = note
 	}
 
 	return notes, nil
 }
 
 // Из доменного слайса в protobuf слайс
-func NotesToProto(notes []Note) []*cmn.Note {
-	protoNotes := make([]*cmn.Note, 0, len(notes))
+func NotesToProto(notes []*domain.Note) []*common.Note {
+	protoNotes := make([]*common.Note, len(notes))
 
-	for _, note := range notes {
-		protoNotes = append(protoNotes, NoteToProto(note))
+	for i := range notes {
+		protoNotes[i] = NoteToProto(notes[i])
 	}
 
 	return protoNotes

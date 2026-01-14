@@ -1,9 +1,10 @@
-package domain
+package transport
 
 import (
 	"context"
-	cmn "obsidianGoNaive/protos/gen/common"
+	"obsidianGoNaive/protos/gen/common"
 	pb "obsidianGoNaive/protos/gen/notes"
+	"obsidianGoNaive/services/notes/internal/repository"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -12,24 +13,25 @@ import (
 
 type NoteService struct {
 	pb.UnimplementedNotesServer
+	Repo *repository.Repository
 }
 
-func NewNoteService() *NoteService {
+func NewNoteService(repo *repository.Repository) *NoteService {
 
-	return &NoteService{}
+	return &NoteService{Repo: repo}
 }
 
 func (ns *NoteService) Create(ctx context.Context, r *pb.CreateRequest) (*pb.CreateResponse, error) {
 
 	domainNote, _ := ProtoToNote(r.Note)
-	id, err := Repo.Insert(ctx, domainNote)
+	id, err := ns.Repo.DB.Insert(ctx, domainNote)
 
-	return &pb.CreateResponse{Note: &cmn.Note{Id: id.String()}}, err
+	return &pb.CreateResponse{Note: &common.Note{Id: id.String()}}, err
 }
 func (ns *NoteService) GetByID(ctx context.Context, r *pb.GetByIdRequest) (*pb.GetByIdResponse, error) {
 
 	id, err := uuid.Parse(r.Id)
-	domainNote, err := Repo.GetByID(ctx, id)
+	domainNote, err := ns.Repo.DB.GetByID(ctx, id)
 	protoNote := NoteToProto(domainNote)
 
 	return &pb.GetByIdResponse{Note: protoNote}, err
@@ -38,21 +40,21 @@ func (ns *NoteService) Find(ctx context.Context, r *pb.FindRequest) (*pb.FindRes
 
 	if r.Name != "" {
 
-		domainNote, err := Repo.FindByName(ctx, r.Name)
+		domainNote, err := ns.Repo.DB.FindByName(ctx, r.Name)
 		protoNote := NoteToProto(domainNote)
 
-		return &pb.FindResponse{Note: []*cmn.Note{protoNote}}, err
+		return &pb.FindResponse{Note: []*common.Note{protoNote}}, err
 	}
 	if r.Ancestor != "" {
 
-		domainNote, err := Repo.FindByAncestor(ctx, r.Ancestor)
+		domainNote, err := ns.Repo.DB.FindByAncestor(ctx, r.Ancestor)
 		protoNote := NotesToProto(domainNote)
 
 		return &pb.FindResponse{Note: protoNote}, err
 	}
 	if r.Limit == 0 {
 
-		domainNotes, err := Repo.GetAll(ctx)
+		domainNotes, err := ns.Repo.DB.GetAll(ctx)
 		protoNotes := NotesToProto(domainNotes)
 
 		return &pb.FindResponse{Note: protoNotes}, err
@@ -63,7 +65,7 @@ func (ns *NoteService) UpdateById(ctx context.Context, r *pb.UpdateByIdRequest) 
 
 	protoNote := r.Note
 	domainNote, err := ProtoToNote(protoNote)
-	err = Repo.UpdateById(ctx, domainNote)
+	err = ns.Repo.DB.UpdateById(ctx, domainNote)
 
 	return &pb.UpdateByIdResponse{}, err
 
@@ -71,7 +73,7 @@ func (ns *NoteService) UpdateById(ctx context.Context, r *pb.UpdateByIdRequest) 
 func (ns *NoteService) DeleteById(ctx context.Context, r *pb.DeleteByIdRequest) (*pb.DeleteByIdResponse, error) {
 
 	id, err := uuid.Parse(r.Id)
-	err = Repo.DeleteById(ctx, id)
+	err = ns.Repo.DB.DeleteById(ctx, id)
 
 	return &pb.DeleteByIdResponse{}, err
 }

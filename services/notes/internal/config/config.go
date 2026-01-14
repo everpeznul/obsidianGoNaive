@@ -2,11 +2,14 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 )
 
 type Config struct {
-	DB DBConfig `yaml:"db"`
+	DB  DBConfig  `yaml:"db"`
+	Log LogConfig `yaml:"log"`
+	Net NetConfig `yaml:"net"`
 }
 
 type DBConfig struct {
@@ -23,9 +26,16 @@ type DBConfig struct {
 }
 
 func (c DBConfig) DSN() string {
-	// lib/pq принимает keyword/value формат, как у вас в connStr
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode,
 	)
+}
+
+type LogConfig struct {
+	NotesLevel slog.Level `yaml:"notes_level"`
+}
+
+type NetConfig struct {
+	ServerPort int `yaml:"server_port"`
 }

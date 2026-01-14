@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -9,21 +10,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func Load(path string) (Config, error) {
+func LoadFileConfig(path string) (*Config, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return Config{}, fmt.Errorf("read config %q: %w", path, err)
+		return &Config{}, fmt.Errorf("read config %q: %w", path, err)
 	}
 
 	var cfg Config
 	if err := yaml.Unmarshal(b, &cfg); err != nil {
-		return Config{}, fmt.Errorf("parse yaml %q: %w", path, err)
+		return &Config{}, fmt.Errorf("parse yaml %q: %w", path, err)
 	}
 
 	if err := cfg.Validate(); err != nil {
-		return Config{}, err
+		return &Config{}, err
 	}
-	return cfg, nil
+	return &cfg, nil
 }
 
 func (c Config) Validate() error {
@@ -35,15 +36,21 @@ func (c Config) Validate() error {
 	return nil
 }
 
-func LoadDBFromEnv() Config {
-	return Config{DBConfig{
-		Host:     getEnv("POSTGRES_HOST"),
-		Port:     getEnvInt("POSTGRES_PORT"),
-		User:     getEnv("POSTGRES_USER"),
-		Password: getEnv("POSTGRES_PASSWORD"),
-		DBName:   getEnv("POSTGRES_DB"),
-		SSLMode:  getEnv("POSTGRES_SSLMODE"),
-	}}
+func LoadEnvConfig() *Config {
+	return &Config{
+		DB: DBConfig{
+			Host:     getEnv("POSTGRES_HOST"),
+			Port:     getEnvInt("POSTGRES_PORT"),
+			User:     getEnv("POSTGRES_USER"),
+			Password: getEnv("POSTGRES_PASSWORD"),
+			DBName:   getEnv("POSTGRES_DB"),
+			SSLMode:  getEnv("POSTGRES_SSLMODE"),
+		}, Log: LogConfig{
+			NotesLevel: slog.Level(getEnvInt("NOTES_LOG_LEVEL")),
+		}, Net: NetConfig{
+			ServerPort: getEnvInt("NOTES_SERVER_PORT"),
+		},
+	}
 }
 
 func getEnv(k string) string {

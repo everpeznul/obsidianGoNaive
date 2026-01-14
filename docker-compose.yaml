@@ -21,7 +21,7 @@ services:
   notes:
     build:
       context: .
-      dockerfile: Dockerfile.notes
+      dockerfile: services/notes/Dockerfile.notes
     container_name: notes
     environment:
       POSTGRES_HOST: database

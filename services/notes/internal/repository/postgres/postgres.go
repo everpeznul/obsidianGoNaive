@@ -1,25 +1,30 @@
-package database
+package postgres
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"obsidianGoNaive/services/notes/domain"
+	"obsidianGoNaive/services/notes/internal/domain"
+	"obsidianGoNaive/services/notes/internal/repository"
 
 	"github.com/google/uuid"
 )
 
-type PgDB struct {
-	DB *sql.DB
+type Postgres struct {
+	DB   *sql.DB
+	Mapp *PostgresMapper
 }
 
-func (p *PgDB) Insert(ctx context.Context, note domain.Note) (uuid.UUID, error) {
+func NewPostgres(db *sql.DB, mapp *PostgresMapper) *Postgres {
+	return &Postgres{DB: db, Mapp: mapp}
+}
+
+func (p *Postgres) Insert(ctx context.Context, note *domain.Note) (uuid.UUID, error) {
 
 	newId := uuid.New()
 
-	newNote := dbNote{}
-	newNote = nm.DomainToDatabase(note)
+	newNote := p.Mapp.DomainToRepo(note)
 	newNote.Id = newId
 
 	query := `INSERT INTO notes (id, title, path, class, tags, links, content, create_time, update_time) 
@@ -45,12 +50,12 @@ func (p *PgDB) Insert(ctx context.Context, note domain.Note) (uuid.UUID, error) 
 	return newId, nil
 }
 
-func (p *PgDB) GetByID(ctx context.Context, id uuid.UUID) (domain.Note, error) {
+func (p *Postgres) GetByID(ctx context.Context, id uuid.UUID) (*domain.Note, error) {
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time
               FROM notes WHERE id = $1`
 	row := p.DB.QueryRowContext(ctx, query, id)
 
-	note := dbNote{}
+	note := &repository.Note{}
 	err := row.Scan(
 		&note.Id,
 		&note.Title,
@@ -64,17 +69,17 @@ func (p *PgDB) GetByID(ctx context.Context, id uuid.UUID) (domain.Note, error) {
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return domain.Note{}, fmt.Errorf("note with id=%s not found in database: %w", id, err)
+		return nil, fmt.Errorf("note with id=%s not found in database: %w", id, err)
 	}
 	if err != nil {
-		return domain.Note{}, fmt.Errorf("database error: %w", err)
+		return nil, fmt.Errorf("database error: %w", err)
 	}
 
-	return nm.DatabaseToDomain(note), nil
+	return p.Mapp.RepoToDomain(note), nil
 }
 
-func (p *PgDB) GetAll(ctx context.Context) ([]domain.Note, error) {
-	notes := make([]domain.Note, 0)
+func (p *Postgres) GetAll(ctx context.Context) ([]*domain.Note, error) {
+	notes := make([]*domain.Note, 0)
 
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time 
 			  FROM notes`
@@ -85,7 +90,7 @@ func (p *PgDB) GetAll(ctx context.Context) ([]domain.Note, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		n := dbNote{}
+		n := &repository.Note{}
 		err := rows.Scan(
 			&n.Id,
 			&n.Title,
@@ -102,7 +107,7 @@ func (p *PgDB) GetAll(ctx context.Context) ([]domain.Note, error) {
 			return nil, fmt.Errorf("failed push another note to notes list from database: %w", err)
 		}
 
-		notes = append(notes, nm.DatabaseToDomain(n))
+		notes = append(notes, p.Mapp.RepoToDomain(n))
 	}
 
 	if err = rows.Err(); err != nil {
@@ -112,8 +117,8 @@ func (p *PgDB) GetAll(ctx context.Context) ([]domain.Note, error) {
 	return notes, nil
 }
 
-func (p *PgDB) UpdateById(ctx context.Context, n domain.Note) error {
-	newNote := nm.DomainToDatabase(n)
+func (p *Postgres) UpdateById(ctx context.Context, n *domain.Note) error {
+	newNote := p.Mapp.DomainToRepo(n)
 	query := `UPDATE notes 
               SET title = $1,
                   path = $2,
@@ -146,7 +151,7 @@ func (p *PgDB) UpdateById(ctx context.Context, n domain.Note) error {
 	return nil
 }
 
-func (p *PgDB) DeleteById(ctx context.Context, id uuid.UUID) error {
+func (p *Postgres) DeleteById(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM notes WHERE id = $1`
 	_, err := p.DB.ExecContext(ctx, query, id)
 
@@ -157,8 +162,8 @@ func (p *PgDB) DeleteById(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (p *PgDB) FindByName(ctx context.Context, name string) (domain.Note, error) {
-	newNote := dbNote{}
+func (p *Postgres) FindByName(ctx context.Context, name string) (*domain.Note, error) {
+	newNote := &repository.Note{}
 
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time 
               FROM notes 
@@ -177,17 +182,17 @@ func (p *PgDB) FindByName(ctx context.Context, name string) (domain.Note, error)
 	)
 
 	if err != nil {
-		return domain.Note{}, fmt.Errorf("failed to get note '%s' from database: %w", name, err)
+		return nil, fmt.Errorf("failed to get note '%s' from database: %w", name, err)
 	}
 
-	return nm.DatabaseToDomain(newNote), nil
+	return p.Mapp.RepoToDomain(newNote), nil
 }
 
 // func (p *PgDB) FindAncestors(ctx context.Context, name string) (domain.Note, error) {}
 
-func (p *PgDB) FindByAncestor(ctx context.Context, ancestor string) ([]domain.Note, error) {
+func (p *Postgres) FindByAncestor(ctx context.Context, ancestor string) ([]*domain.Note, error) {
 
-	notes := make([]domain.Note, 0)
+	notes := make([]*domain.Note, 0)
 
 	query := `SELECT id, title, path, class, tags, links, content, create_time, update_time  
               FROM notes 
@@ -200,7 +205,7 @@ func (p *PgDB) FindByAncestor(ctx context.Context, ancestor string) ([]domain.No
 	defer rows.Close()
 
 	for rows.Next() {
-		note := dbNote{}
+		note := &repository.Note{}
 		err := rows.Scan(
 			&note.Id,
 			&note.Title,
@@ -215,7 +220,7 @@ func (p *PgDB) FindByAncestor(ctx context.Context, ancestor string) ([]domain.No
 		if err != nil {
 			return nil, fmt.Errorf("failed to push note to notes from database in finding descendents of %s: %w", ancestor, err)
 		}
-		notes = append(notes, nm.DatabaseToDomain(note))
+		notes = append(notes, p.Mapp.RepoToDomain(note))
 	}
 
 	if err = rows.Err(); err != nil {
