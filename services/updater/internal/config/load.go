@@ -21,34 +21,21 @@ func LoadFileConfig(path string) (*Config, error) {
 		return &Config{}, fmt.Errorf("parse yaml %q: %w", path, err)
 	}
 
-	if err := cfg.Validate(); err != nil {
-		return &Config{}, err
-	}
+	/*
+		if err := cfg.Validate(); err != nil {
+			return &Config{}, err
+		}
+	*/
 	return &cfg, nil
-}
-
-func (c Config) Validate() error {
-	// Минимальная валидация: чтобы падать при старте, а не “где-то потом”.
-	if c.DB.DBName == "" {
-		return fmt.Errorf("invalid db config: host/port/user/name are required")
-	}
-
-	return nil
 }
 
 func LoadEnvConfig() *Config {
 	return &Config{
-		DB: &DBConfig{
-			Host:     getEnv("POSTGRES_HOST"),
-			Port:     getEnvInt("POSTGRES_PORT"),
-			User:     getEnv("POSTGRES_USER"),
-			Password: getEnv("POSTGRES_PASSWORD"),
-			DBName:   getEnv("POSTGRES_DB"),
-			SSLMode:  getEnv("POSTGRES_SSLMODE"),
-		}, Log: &LogConfig{
-			NotesLevel: slog.Level(getEnvInt("NOTES_LOG_LEVEL")),
+		Log: &LogConfig{
+			UpdaterLevel: slog.Level(getEnvInt("UPDATER_LOG_LEVEL")),
 		}, Net: &NetConfig{
-			ServerPort: getEnvInt("NOTES_SERVER_PORT"),
+			ServerPort: getEnvInt("UPDATER_SERVER_PORT"),
+			ClientPort: getEnvInt("NOTES_SERVER_PORT"),
 		},
 	}
 }

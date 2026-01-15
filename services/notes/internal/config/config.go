@@ -7,9 +7,9 @@ import (
 )
 
 type Config struct {
-	DB  DBConfig  `yaml:"db"`
-	Log LogConfig `yaml:"log"`
-	Net NetConfig `yaml:"net"`
+	DB  *DBConfig  `yaml:"db"`
+	Log *LogConfig `yaml:"log"`
+	Net *NetConfig `yaml:"net"`
 }
 
 type DBConfig struct {

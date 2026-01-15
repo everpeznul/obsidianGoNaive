@@ -12,6 +12,7 @@ import (
 	obsiHttp "obsidianGoNaive/gatewate/http"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var base = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -38,9 +39,9 @@ func main() {
 		updaterAddr = "localhost:9002"
 	}
 
-	notesConn, _ := grpc.NewClient(notesAddr, grpc.WithInsecure())
+	notesConn, _ := grpc.NewClient(notesAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	notesClient := pbn.NewNotesClient(notesConn)
-	updaterConn, _ := grpc.NewClient(updaterAddr, grpc.WithInsecure())
+	updaterConn, _ := grpc.NewClient(updaterAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	updaterClient := pbu.NewUpdaterClient(updaterConn)
 
 	// server := &HTTPServer{notesClient, updaterClient}

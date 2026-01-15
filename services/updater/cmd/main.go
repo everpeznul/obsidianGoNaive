@@ -1,39 +1,25 @@
 package main
 
 import (
-	"log/slog"
-	"net"
-	pbn "obsidianGoNaive/pkg/protos/gen/notes"
-	pbu "obsidianGoNaive/pkg/protos/gen/updater"
-	"obsidianGoNaive/services/updater/use_case"
+	"obsidianGoNaive/services/updater/cmd/app"
 	"os"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"os/signal"
+	"syscall"
 )
-
-var base = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
-var obsiLog = base.With("package", "main updater")
 
 func main() {
 
-	updaterLog := obsiLog.With("package", "updater")
-	use_case.SetLog(updaterLog)
+	app := app.NewApp()
 
-	notesAddr := os.Getenv("NOTES_ADDR")
-	if notesAddr == "" {
-		notesAddr = "localhost:9001" // для локального запуска
-	}
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	conn, _ := grpc.NewClient(notesAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	client := pbn.NewNotesClient(conn)
+	go func() {
+		if err := app.GRPCServer.Serve(app.Listener); err != nil {
+			app.Log.Error("server error", "error", err)
+		}
+	}()
+	<-sigChan
 
-	updater := use_case.NewUpdaterService(client)
-
-	server := grpc.NewServer()
-	pbu.RegisterUpdaterServer(server, updater)
-
-	lis, _ := net.Listen("tcp", ":9002")
-	server.Serve(lis)
-
+	app.GRPCServer.GracefulStop()
 }

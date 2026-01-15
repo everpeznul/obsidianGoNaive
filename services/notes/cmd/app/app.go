@@ -27,15 +27,15 @@ type App struct {
 
 func NewApp() *App {
 	config := InitEnvConfig()
-	log := InitLog(&config.Log)
-	db, err := InitPgDatabase(log, &config.DB)
+	log := InitLog(config.Log)
+	db, err := InitPgDatabase(log, config.DB)
 	if err != nil {
 
 		log.Error("Failed to init database", "error", err)
 		os.Exit(1)
 	}
 	repo := InitPgRepo(db)
-	lis, grpcServer, err := InitGRPCServer(log, &config.Net, repo)
+	lis, grpcServer, err := InitGRPCServer(log, config.Net, repo)
 	if err != nil {
 
 		log.Error("Failed to init grpc server", "error", err)
@@ -111,7 +111,7 @@ func InitPgRepo(db *sql.DB) *repository.Repository {
 
 func InitGRPCServer(obsiLog *slog.Logger, cfg *config.NetConfig, repo *repository.Repository) (net.Listener, *grpc.Server, error) {
 
-	notesService := transport.NewNoteService(repo)
+	notesService := transport.NewNotesService(repo)
 
 	server := grpc.NewServer()
 	pb.RegisterNotesServer(server, notesService)
